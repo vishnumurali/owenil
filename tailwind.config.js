@@ -55,10 +55,14 @@ export default {
       keyframes: {
         shimmer: { '100%': { transform: 'translateX(100%)' } },
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        // Page entrance. The resting state is fully visible, so a skipped or
+        // interrupted animation can never leave a page hidden.
+        'page-in': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'none' } },
       },
       animation: {
         shimmer: 'shimmer 1.6s infinite',
         'fade-in': 'fade-in 200ms ease-out',
+        'page-in': 'page-in 220ms cubic-bezier(0.16, 1, 0.3, 1)',
       },
     },
   },

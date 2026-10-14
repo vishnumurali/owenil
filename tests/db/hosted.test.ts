@@ -26,6 +26,7 @@ let G = '';
 let E = '';
 let PE = '';
 let S = '';
+let MODE = 'off';
 
 async function rpc<T>(c: SupabaseClient, fn: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await c.rpc(fn, args);
@@ -35,6 +36,9 @@ async function rpc<T>(c: SupabaseClient, fn: string, args: Record<string, unknow
 
 describe.skipIf(!run)('hosted Supabase: authentication, RLS and financial consistency', () => {
   beforeAll(async () => {
+    const mdb = await pgClient();
+    MODE = (await mdb.query<{ m: string }>(`select value #>> '{}' as m from public.app_settings where key = 'dev_entitlements_mode'`)).rows[0]?.m ?? 'off';
+    await mdb.end();
     const admin = adminClient();
     const make = async (name: string) => {
       const email = `${name}.${tag}@${DOMAIN}`;
@@ -67,9 +71,9 @@ describe.skipIf(!run)('hosted Supabase: authentication, RLS and financial consis
     await deleteAuthUsersByEmail(adminClient(), (e) => e.endsWith(`.${tag}@${DOMAIN}`));
   });
 
-  it('signup created profile, preferences and a free entitlement', async () => {
+  it('signup created profile, preferences and an entitlement (Plus only in "everyone" testing mode)', async () => {
     const { data } = await A.client.from('subscription_entitlements').select('plan').eq('user_id', A.id).single();
-    expect(data?.plan).toBe('free');
+    expect(data?.plan).toBe(MODE === 'everyone' ? 'plus' : 'free');
     const { data: prefs } = await A.client.from('user_preferences').select('theme').eq('user_id', A.id).single();
     expect(prefs?.theme).toBe('system');
   });
@@ -116,11 +120,19 @@ describe.skipIf(!run)('hosted Supabase: authentication, RLS and financial consis
   });
 
   it('users cannot grant themselves premium', async () => {
+    // Never by writing the table directly, whatever the mode.
     expect((await X.client.from('subscription_entitlements').update({ plan: 'plus' }).eq('user_id', X.id)).error).not.toBeNull();
-    expect((await X.client.rpc('dev_set_plan', { p_plan: 'plus' })).error?.message).toMatch(/disabled/);
-    const { data } = await X.client.from('subscription_entitlements').select('plan').eq('user_id', X.id).single();
-    expect(data?.plan).toBe('free');
-    expect((await X.client.from('budgets').insert({ user_id: X.id, amount_minor: 100, currency: 'INR' })).error).not.toBeNull();
+    expect((await X.client.rpc('set_dev_entitlements_mode', { p_mode: 'everyone' })).error).not.toBeNull();
+    if (MODE === 'off' || MODE === 'testers') {
+      expect((await X.client.rpc('dev_set_plan', { p_plan: 'plus' })).error?.message).toMatch(/disabled/);
+      const { data } = await X.client.from('subscription_entitlements').select('plan').eq('user_id', X.id).single();
+      expect(data?.plan).toBe('free');
+      expect((await X.client.from('budgets').insert({ user_id: X.id, amount_minor: 100, currency: 'INR' })).error).not.toBeNull();
+    } else {
+      // "all"/"everyone" testing modes deliberately let any account use the switch.
+      expect((await X.client.rpc('dev_set_plan', { p_plan: 'free' })).error).toBeNull();
+      expect((await X.client.from('budgets').insert({ user_id: X.id, amount_minor: 100, currency: 'INR' })).error).not.toBeNull();
+    }
   });
 
   it('UPI IDs are shared only with friends and group co-members', async () => {

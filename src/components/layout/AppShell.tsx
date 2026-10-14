@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BarChart3, Bell, CalendarClock, ChevronRight, CircleHelp, Download, HandCoins, Home, LayoutGrid, LogOut, Menu, Monitor, Moon,
@@ -102,19 +103,15 @@ export function AppShell() {
       <div className="lg:pl-[264px]">
         <TopBar onMenu={() => setMoreOpen(true)} />
         <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            >
+          {/* Keyed by path: each page fades in with CSS. No exit animation and no
+              JavaScript-held opacity, so navigation can never get stuck invisible. */}
+          <div key={location.pathname} className="animate-page-in">
+            <RouteErrorBoundary>
               <React.Suspense fallback={<PageSkeleton />}>
                 <Outlet />
               </React.Suspense>
-            </motion.div>
-          </AnimatePresence>
+            </RouteErrorBoundary>
+          </div>
         </main>
       </div>
       <MobileNav onMore={() => setMoreOpen(true)} />

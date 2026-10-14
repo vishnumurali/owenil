@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { adminClient, hasHostedConfig, pgClient } from '../../scripts/lib';
-import { loadAccounts, login, logout } from './helpers';
+import { devEntitlementsMode, loadAccounts, login, logout, pageContent } from './helpers';
 
 const accounts = loadAccounts();
 test.skip(!hasHostedConfig() || !accounts, 'Needs Supabase settings in .env.local');
@@ -159,8 +159,28 @@ test('7. expense editing re-applies the split exactly once', async ({ page }) =>
   await expect(page.getByText('v2')).toBeVisible();
 });
 
+test('7b. comments reach the other people on the expense', async ({ page }) => {
+  await login(page, accounts!.bob);
+  await page.goto(expenseUrl);
+  await page.getByRole('textbox', { name: 'Comment' }).fill('Is the villa price right?');
+  await page.getByRole('button', { name: 'Post comment' }).click();
+  await expect(page.getByText('Is the villa price right?')).toBeVisible();
+  await expect(page.getByText(/infinite recursion|row-level security/i)).toHaveCount(0);
+  await logout(page);
+  await login(page, accounts!.alice);
+  await page.goto(expenseUrl);
+  await expect(page.getByText('Is the villa price right?')).toBeVisible();
+});
+
 test('8. premium development access', async ({ page }) => {
   await login(page, accounts!.alice);
+  await page.goto('plus');
+  // In "Plus for everyone" testing mode new accounts start on Plus: switch to Free first.
+  if ((await devEntitlementsMode()) === 'everyone') {
+    await expect(page.getByText('Plus is active')).toBeVisible();
+    await page.getByRole('button', { name: 'Switch back to Free' }).click();
+    await expect(page.getByRole('button', { name: 'Enable Plus for testing' })).toBeVisible();
+  }
   await page.goto('budgets');
   await expect(page.getByText('Budgets & alerts is part of Owenil Plus')).toBeVisible();
   await page.goto('plus');
@@ -179,9 +199,14 @@ test('9. unauthorized data access is blocked', async ({ page }) => {
   await expect(page.getByText('Group not found')).toBeVisible();
   await page.goto(expenseUrl);
   await expect(page.getByText('Expense not found')).toBeVisible();
-  // The premium switch is refused by the database for non-testers.
   await page.goto('plus');
-  await expect(page.getByText(/Not available for this account/)).toBeVisible();
+  if ((await devEntitlementsMode()) === 'everyone') {
+    // Testing mode: every account, including this one, has Plus.
+    await expect(page.getByText('Plus is active')).toBeVisible();
+  } else {
+    // The premium switch is refused by the database for non-testers.
+    await expect(page.getByText(/Not available for this account/)).toBeVisible();
+  }
 });
 
 test('10. data persists across a browser refresh and new session', async ({ page, context }) => {
@@ -196,4 +221,25 @@ test('10. data persists across a browser refresh and new session', async ({ page
   await page2.goto('dashboard');
   await expect(page2).toHaveURL(/\/dashboard/);
   await expect(page2.getByRole('heading', { name: 'E2E Alice' })).toBeVisible();
+});
+
+test('11. moving between pages by clicking always shows the page', async ({ page }) => {
+  await login(page, accounts!.alice);
+  const nav = page.getByRole('navigation', { name: 'Main' });
+  const pages: [string, RegExp][] = [
+    ['Groups', /Groups/], ['Expenses', /Expenses/], ['Balances', /Balances/], ['Analytics', /Analytics/],
+    ['Repayments', /Repayments/], ['Friends', /Friends/], ['Recurring', /Recurring/], ['Dashboard', /E2E Alice/],
+  ];
+  for (const [link, heading] of pages) {
+    await nav.getByRole('link', { name: link, exact: true }).click();
+    await expect(page.locator('main h1').first()).toContainText(heading);
+    // Present AND visible: a stuck page transition used to leave it at opacity 0.
+    await expect(pageContent(page)).toHaveCSS('opacity', '1');
+  }
+  await page.getByRole('link', { name: /^Add expense/ }).first().click();
+  await expect(page.getByRole('heading', { name: 'Add an expense' })).toBeVisible();
+  await expect(pageContent(page)).toHaveCSS('opacity', '1');
+  await page.goBack();
+  await expect(page.locator('main h1').first()).toContainText(/E2E Alice/);
+  await expect(pageContent(page)).toHaveCSS('opacity', '1');
 });

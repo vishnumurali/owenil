@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
+import { pgClient } from '../../scripts/lib';
 
 export interface Account {
   email: string;
@@ -27,3 +28,17 @@ export async function logout(page: Page) {
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login/);
 }
+
+/** The server's development-Plus mode: off | testers | all | everyone. */
+export async function devEntitlementsMode(): Promise<string> {
+  const db = await pgClient();
+  try {
+    const { rows } = await db.query<{ mode: string | null }>(`select value #>> '{}' as mode from public.app_settings where key = 'dev_entitlements_mode'`);
+    return rows[0]?.mode ?? 'off';
+  } finally {
+    await db.end();
+  }
+}
+
+/** The visible page content: the wrapper AppShell re-creates for every page. */
+export const pageContent = (page: Page) => page.locator('main > div').first();

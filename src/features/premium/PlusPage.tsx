@@ -119,7 +119,11 @@ export default function PlusPage() {
                 <p className="mt-2 text-sm text-fg-muted">Checking…</p>
               ) : dev.data?.premium_switch_allowed ? (
                 <>
-                  <p className="mt-2 text-sm text-fg-muted">For testing only. The database verified that this account is a tester in a development environment (mode: <code>{dev.data.mode}</code>).</p>
+                  <p className="mt-2 text-sm text-fg-muted">
+                    {dev.data.mode === 'everyone'
+                      ? 'Plus is switched on for everyone while Owenil is being tested. Switch back to Free to try the free version.'
+                      : <>For testing only. The database verified that this account may use the switch in a development environment (mode: <code>{dev.data.mode}</code>).</>}
+                  </p>
                   <Button className="mt-4 w-full" variant={isPlus ? 'outline' : 'primary'} loading={busy} onClick={() => setPlan(isPlus ? 'free' : 'plus')}>
                     {isPlus ? 'Switch back to Free' : 'Enable Plus for testing'}
                   </Button>

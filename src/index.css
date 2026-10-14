@@ -110,6 +110,14 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  /* A grid with no column utility (e.g. "grid lg:grid-cols-5" on a phone) would
+     size its single column to the longest text and push the page wider than the
+     screen. Default to one column that may shrink, so text truncates instead.
+     Any grid-cols-* utility still overrides this. */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @layer utilities {
