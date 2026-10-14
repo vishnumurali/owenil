@@ -1,0 +1,14 @@
+# Known limitations
+
+- **No payments or subscriptions.** Owenil Plus is enabled only through the development entitlement (testers mode). Prices on the Plus page are for display only.
+- **No OCR.** Receipt details and items are entered manually. Local OCR (for example `tesseract.js`, Apache-2.0) could be added later. It's free but adds about 10 MB of assets, so it was left out of the MVP.
+- **No live exchange rates.** Conversion uses only rates the user records. This is deliberate.
+- **Email delivery.** Supabase's built-in email only reaches your own team's addresses and is rate-limited. Configure free custom SMTP for other testers (see Supabase setup). Invitations are links you share yourself; Owenil doesn't send invite emails.
+- **Realtime.** Lists refresh on actions, on focus and every 60 seconds (notifications). They don't stream live changes yet; Supabase Realtime could be added.
+- **Itemized edits by non-Plus users.** Changing an existing expense *to* itemized requires Plus. An expense that's already itemized can still be edited by anyone allowed to edit it.
+- **Recurring templates with several payers or exact amounts** can't change their amount. Cancel and recreate instead; other fields can be edited.
+- **Leaving with a balance.** Members can't leave or be removed, and accounts can't be deleted, until balances are settled. This is intentional so others' records stay correct.
+- **Account deletion and auth.** `delete_my_account` anonymises all data. It also removes the `auth.users` row when the database role is permitted to; if not, the profile is anonymised and the login stays until an admin deletes it in **Authentication → Users**. The result tells you which happened.
+- **Scale.** Some list views compute in the browser: balances, analytics over at most 10 years of the caller's own expenses, and group insights over at most 1,000 expenses. That's fine for personal and group use. Move them into SQL views if a group grows very large.
+- **Static hosting.** GitHub Pages can't send security headers, so the CSP is a meta tag and framing is blocked by script rather than `X-Frame-Options`. Deep links answer with HTTP 404 on first load (browsers show the app normally). Files are cached for 10 minutes, so a deploy can take that long to reach everyone.
+- **Node 18.** The workspace runs Node 18.17, so dependency versions are pinned to releases that support it. Node 18 is end-of-life. Upgrade to Node 22 LTS (`nvm install 22 && nvm use 22`) and then you can move to Vite 7, supabase-js latest and Playwright latest. <a id="node-18"></a>

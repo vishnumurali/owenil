@@ -1,0 +1,142 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/sora';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Owenil design tokens (HSL triplets). Light = warm white & neutral grey;
+   dark = deep navy & charcoal. Accent = mint → teal.
+   --------------------------------------------------------------------------- */
+@layer base {
+  :root {
+    --bg: 40 33% 98%;
+    --surface: 0 0% 100%;
+    --elevated: 0 0% 100%;
+    --muted: 40 14% 94.5%;
+    --border: 35 12% 88%;
+    --ring: 168 76% 36%;
+    --fg: 222 40% 12%;
+    --fg-muted: 220 12% 38%;
+    --fg-subtle: 220 9% 56%;
+    --primary: 166 78% 32%;
+    --primary-fg: 0 0% 100%;
+    --primary-soft: 160 60% 93%;
+    --accent: 192 80% 38%;
+    --accent-soft: 190 70% 93%;
+    --positive: 158 72% 30%;
+    --positive-soft: 152 60% 93%;
+    --negative: 6 72% 50%;
+    --negative-soft: 6 90% 96%;
+    --warning: 34 92% 40%;
+    --warning-soft: 42 100% 93%;
+    --plus: 262 70% 56%;
+    --plus-soft: 262 80% 96%;
+    --shadow: 222 40% 20%;
+    --brand-1: 158 74% 52%;
+    --brand-2: 172 70% 40%;
+    --brand-3: 194 80% 42%;
+    --radius: 14px;
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg: 226 45% 7%;
+    --surface: 224 38% 11%;
+    --elevated: 224 34% 14%;
+    --muted: 224 28% 16%;
+    --border: 224 24% 21%;
+    --ring: 162 70% 48%;
+    --fg: 220 30% 94%;
+    --fg-muted: 220 16% 70%;
+    --fg-subtle: 222 12% 52%;
+    --primary: 160 70% 46%;
+    --primary-fg: 226 45% 8%;
+    --primary-soft: 164 50% 15%;
+    --accent: 188 78% 52%;
+    --accent-soft: 192 50% 15%;
+    --positive: 156 64% 52%;
+    --positive-soft: 158 45% 14%;
+    --negative: 4 88% 68%;
+    --negative-soft: 4 40% 16%;
+    --warning: 38 95% 60%;
+    --warning-soft: 36 45% 15%;
+    --plus: 262 85% 74%;
+    --plus-soft: 262 35% 18%;
+    --shadow: 226 60% 2%;
+    --brand-1: 156 70% 56%;
+    --brand-2: 170 72% 44%;
+    --brand-3: 192 82% 50%;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Smooth theme switching — disabled for reduced motion */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 280ms ease, border-color 280ms ease, color 200ms ease, fill 200ms ease !important;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-bg;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .glass {
+    background: hsl(var(--surface) / 0.72);
+    backdrop-filter: saturate(160%) blur(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
