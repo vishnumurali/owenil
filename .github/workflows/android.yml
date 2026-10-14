@@ -50,7 +50,7 @@ jobs:
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Secret ANDROID_KEYSTORE_BASE64 is not set"; exit 1; }
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/owenil.p12"
           export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/owenil.p12"
-          cd android && ./gradlew --no-daemon assembleRelease
+          cd android && chmod +x gradlew && ./gradlew --no-daemon assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Owenil.apk"
           rm -f "$RUNNER_TEMP/owenil.p12"
       - name: Check the APK (package, version, signature)
