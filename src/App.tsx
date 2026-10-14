@@ -23,6 +23,7 @@ const ExpenseFormPage = lazyPage(() => import('@/features/expenses/ExpenseFormPa
 const ExpenseDetail = lazyPage(() => import('@/features/expenses/ExpenseDetailPage'));
 const BalancesPage = lazyPage(() => import('@/features/balances/BalancesPage'));
 const SettlementsPage = lazyPage(() => import('@/features/balances/SettlementsPage'));
+const PayPage = lazyPage(() => import('@/features/payments/PayPage'));
 const RecurringPage = lazyPage(() => import('@/features/recurring/RecurringPage'));
 const AnalyticsPage = lazyPage(() => import('@/features/analytics/AnalyticsPage'));
 const BudgetsPage = lazyPage(() => import('@/features/budgets/BudgetsPage'));
@@ -89,6 +90,7 @@ export function App() {
           <Route path="/expenses/:expenseId/edit" element={<ExpenseFormPage />} />
           <Route path="/balances" element={<BalancesPage />} />
           <Route path="/settlements" element={<SettlementsPage />} />
+          <Route path="/pay" element={<PayPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />

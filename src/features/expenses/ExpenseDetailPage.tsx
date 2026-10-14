@@ -20,6 +20,7 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import { EmptyState, ErrorState, SectionTitle } from '@/components/ui/layout-bits';
 import { CategoryIcon, GroupBadge } from '@/components/domain';
 import { receiptUrl } from './receipts';
+import { ItemPayStatus } from '@/features/payments/ItemPay';
 
 export default function ExpenseDetailPage() {
   const { expenseId = '' } = useParams();
@@ -137,9 +138,12 @@ export default function ExpenseDetailPage() {
                       {part && !part.included ? 'excluded' : <>share {formatMoney(owes, e.currency)}</>}
                     </p>
                   </div>
-                  <span className={`tabular text-sm font-semibold ${net > 0 ? 'text-positive' : net < 0 ? 'text-negative' : 'text-fg-subtle'}`}>
-                    {net === 0 ? 'even' : `${net > 0 ? 'gets back' : 'owes'} ${formatMoney(Math.abs(net), e.currency)}`}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className={`tabular text-sm font-semibold ${net > 0 ? 'text-positive' : net < 0 ? 'text-negative' : 'text-fg-subtle'}`}>
+                      {net === 0 ? 'even' : `${net > 0 ? 'gets back' : 'owes'} ${formatMoney(Math.abs(net), e.currency)}`}
+                    </span>
+                    {uid === me && !deleted && <ItemPayStatus expense={e} />}
+                  </div>
                 </div>
               );
             })}

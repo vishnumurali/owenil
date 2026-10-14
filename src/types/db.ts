@@ -167,6 +167,8 @@ export interface Settlement {
   reversal_reason: string | null;
   is_demo: boolean;
   created_at: string;
+  /** Set when the repayment was made for one specific expense. */
+  expense_id: string | null;
 }
 
 export interface Friendship {

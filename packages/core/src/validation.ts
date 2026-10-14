@@ -78,6 +78,8 @@ export const settlementPayloadSchema = z
     settled_on: isoDate,
     method: z.enum(['cash', 'upi', 'bank_transfer', 'card', 'other']),
     note: z.string().max(500).nullable(),
+    /** Optional: the expense this repayment is for (marks that expense "Paid"). */
+    expense_id: uuid.nullable().optional(),
   })
   .refine((v) => v.payer_id !== v.payee_id, { message: 'Payer and recipient must be different people', path: ['payee_id'] });
 

@@ -35,7 +35,7 @@ test('bottom tab bar switches pages on a phone', async ({ page }) => {
     // Nothing may be wider than the phone (the page would slide sideways and taps would miss).
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
-  for (const path of ['analytics', 'expenses', 'settings']) {
+  for (const path of ['analytics', 'expenses', 'settings', 'pay']) {
     await page.goto(path);
     await expect(page.locator('main h1').first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

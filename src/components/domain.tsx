@@ -13,6 +13,7 @@ import { Avatar } from './ui/avatar';
 import { Badge } from './ui/misc';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { ItemPayButton } from '@/features/payments/ItemPay';
 
 const ICONS: Record<string, React.ElementType> = {
   utensils: Utensils, 'shopping-basket': ShoppingBasket, home: Home, 'plug-zap': PlugZap, plane: Plane, bus: Bus, fuel: Fuel,
@@ -69,13 +70,10 @@ export function ExpenseRow({ expense, categories, groupName, className }: { expe
         ? `${payers[0].user_id === user?.id ? 'You' : contacts?.get(payers[0].user_id)?.display_name ?? 'Someone'} paid`
         : '';
   return (
+    <div className={cn('group flex flex-wrap items-center rounded-xl transition-colors hover:bg-muted/60', expense.deleted_at && 'opacity-60', className)}>
     <Link
       to={`/expenses/${expense.id}`}
-      className={cn(
-        'group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/60 focus-visible:bg-muted/60',
-        expense.deleted_at && 'opacity-60',
-        className,
-      )}
+      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-3 focus-visible:bg-muted/60"
     >
       <div className="hidden w-11 shrink-0 text-center sm:block">
         <p className="text-2xs font-medium uppercase text-fg-subtle">{formatDate(expense.expense_date, { month: 'short' })}</p>
@@ -106,6 +104,9 @@ export function ExpenseRow({ expense, categories, groupName, className }: { expe
         )}
       </div>
     </Link>
+    {/* Phones: on its own line under the expense so the name stays readable. */}
+    {!expense.deleted_at && <ItemPayButton expense={expense} className="-mt-1 flex w-full justify-end px-3 pb-3 sm:mt-0 sm:w-auto sm:p-0 sm:pr-3" />}
+    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
-import { adminClient, hasHostedConfig, pgClient } from '../../scripts/lib';
+import { adminClient, hasHostedConfig, pgClient, userClient } from '../../scripts/lib';
+import { expensePayload } from '../sql/payload';
 import { devEntitlementsMode, loadAccounts, login, logout, pageContent } from './helpers';
 
 const accounts = loadAccounts();
@@ -242,4 +243,67 @@ test('11. moving between pages by clicking always shows the page', async ({ page
   await page.goBack();
   await expect(page.locator('main h1').first()).toContainText(/E2E Alice/);
   await expect(pageContent(page)).toHaveCSS('opacity', '1');
+});
+
+/** Pretend the user switched to their UPI app and came back (what a phone does after paying). */
+async function leaveAndReturn(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    const set = (v: string) => Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v });
+    set('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    set('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+}
+
+test('12. pay one expense with UPI, confirm on return, and it shows as paid', async ({ page }) => {
+  await login(page, accounts!.carol);
+  await page.goto(expenseUrl);
+  // Carol's share of the ₹3,600 villa is ₹1,200, all still owed to Alice.
+  await page.getByRole('button', { name: 'Pay E2E Alice ₹1,200.00' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Pay E2E Alice for “Beach villa”' })).toBeVisible();
+  const upiLink = dialog.getByRole('link', { name: 'Open UPI app' });
+  await expect(upiLink).toHaveAttribute('href', 'upi://pay?pa=e2e.alice%40okaxis&pn=E2E%20Alice&am=1200.00&cu=INR&tn=Owenil%20-%20Beach%20villa');
+  // Tap "Open UPI app" (the external app can't open in a test browser), then come back.
+  await upiLink.evaluate((a) => a.addEventListener('click', (e) => e.preventDefault()));
+  await upiLink.click();
+  await leaveAndReturn(page);
+  await expect(dialog.getByText('Did your payment of ₹1,200.00 to E2E Alice go through?')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Yes, mark as paid' }).click();
+  await expect(dialog.getByText('Marked as paid')).toBeVisible();
+  await expect(page.getByText('Paid E2E Alice', { exact: true })).toBeVisible();
+  // The expenses list shows it as paid too.
+  await page.goto('expenses');
+  await expect(page.locator('div', { has: page.getByRole('link', { name: /Beach villa/ }) }).getByText('Paid', { exact: true }).first()).toBeVisible();
+});
+
+test('13. Pay tab combines everything owed to one person into one payment', async ({ page }) => {
+  // Outside any group, Alice also paid ₹500 for snacks shared with Bob → Bob owes ₹250 more.
+  const alice = await userClient(accounts!.alice.email, accounts!.alice.password);
+  const { error } = await alice.client.rpc('create_expense', {
+    p_payload: expensePayload({ amount: 50000, payers: [[accounts!.alice.id, 50000]], participants: [accounts!.alice.id, accounts!.bob.id], description: 'Snacks' }),
+    p_idempotency_key: `e2e-snacks-${Date.now()}`,
+  });
+  expect(error).toBeNull();
+
+  await login(page, accounts!.bob);
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Pay', exact: true }).click();
+  // ₹200 left from the villa (E2E Trip) + ₹250 for snacks (between friends) = ₹450.
+  await expect(page.getByText('2 balances combined')).toBeVisible();
+  await page.getByRole('button', { name: 'Pay ₹450.00' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('E2E Trip')).toBeVisible();
+  await expect(dialog.getByText('Between friends')).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Open UPI app' })).toHaveAttribute('href', 'upi://pay?pa=e2e.alice%40okaxis&pn=E2E%20Alice&am=450.00&cu=INR&tn=Owenil%20-%20settle%20up');
+  await dialog.getByRole('button', { name: 'I’ve paid — mark as paid' }).click();
+  await dialog.getByRole('button', { name: 'Yes, mark as paid' }).click();
+  await expect(dialog.getByText('Marked as paid')).toBeVisible();
+  await expect(page.getByText('You don’t owe anyone')).toBeVisible();
+  // Both balances with Alice are now zero.
+  await page.goto('balances');
+  await expect(page.getByText(/settled up/i).first()).toBeVisible();
+  await logout(page);
+  await login(page, accounts!.alice);
+  await expect(page.getByText('You are owed').locator('..').locator('..')).toContainText('₹0.00');
 });

@@ -35,11 +35,13 @@ export const qk = {
   devStatus: ['dev-status'] as const,
   comments: (id: string) => ['comments', id] as const,
   upi: (userId: string) => ['upi', userId] as const,
+  itemPayments: ['item-payments'] as const,
+  expenseSettlements: (id: string) => ['expense-settlements', id] as const,
 };
 
 /** After any financial change, everything derived from the ledger must refresh. */
 export function invalidateFinancial(qc: QueryClient) {
-  for (const k of ['balances', 'expenses', 'expense', 'settlements', 'activity', 'spending', 'groups', 'group', 'group-ledger', 'notifications', 'recurring', 'contacts']) {
+  for (const k of ['balances', 'expenses', 'expense', 'settlements', 'activity', 'spending', 'groups', 'group', 'group-ledger', 'notifications', 'recurring', 'contacts', 'item-payments', 'expense-settlements']) {
     void qc.invalidateQueries({ queryKey: [k] });
   }
 }
@@ -313,6 +315,33 @@ export function useSettlements(f: { groupId?: string; friendId?: string; limit?:
       if (f.friendId) q = q.or(`and(payer_id.eq.${user!.id},payee_id.eq.${f.friendId}),and(payer_id.eq.${f.friendId},payee_id.eq.${user!.id})`);
       return unwrap(await q) as Settlement[];
     },
+  });
+}
+
+/** Repayments the caller made for specific expenses (not reversed): `${expenseId}|${payeeId}` → amount. */
+export function useMyItemPayments() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: qk.itemPayments,
+    enabled: !!user,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const rows = unwrap(
+        await supabase.from('settlements').select('expense_id, payee_id, amount_minor').eq('payer_id', user!.id).not('expense_id', 'is', null).is('reversed_at', null).limit(2000),
+      ) as { expense_id: string; payee_id: string; amount_minor: number }[];
+      const m = new Map<string, number>();
+      for (const r of rows) m.set(`${r.expense_id}|${r.payee_id}`, (m.get(`${r.expense_id}|${r.payee_id}`) ?? 0) + Number(r.amount_minor));
+      return m;
+    },
+  });
+}
+
+/** Everyone's (non-reversed) repayments made for one expense. */
+export function useExpenseSettlements(expenseId: string | undefined) {
+  return useQuery({
+    queryKey: qk.expenseSettlements(expenseId ?? ''),
+    enabled: !!expenseId,
+    queryFn: async () => unwrap(await supabase.from('settlements').select('*').eq('expense_id', expenseId!).is('reversed_at', null)) as Settlement[],
   });
 }
 

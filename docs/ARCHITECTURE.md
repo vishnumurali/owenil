@@ -108,6 +108,12 @@ Design decisions:
   - Every chart has tooltips and a table view.
 - **Accessibility:** semantic landmarks, skip link, labelled controls, `role=radiogroup` segmented controls, focus rings, colour never used alone (icons and labels on status), dialogs and sheets from Radix.
 
+## Paying people back
+
+- **Per expense:** `myItemDebts()` (src/data/payments.ts) attributes the expense exactly like the ledger and reports, per person the viewer owes, whether it is still due, paid for this expense (a repayment with `settlements.expense_id`) or settled another way. The Pay button never asks for more than is still owed in that group (or outside groups).
+- **Combined (Pay tab):** `paymentPlans()` nets the viewer's balances per person and currency across groups; `planPayloads()` turns a plan into one repayment per group (offsets where the person owes the viewer), recorded by `record_settlements()` in one all-or-nothing, idempotent call.
+- Balances still come only from the ledger; `expense_id` is an annotation used for "Paid" badges.
+
 ## Hosting (GitHub Pages)
 
 The app is static, so GitHub Pages serves it from the public repository `vishnumurali/owenil`. A push to `main` runs the tests, builds with the base path `/owenil/` and publishes `dist/`. Static hosting can't run code or send headers, so:

@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BarChart3, Bell, CalendarClock, ChevronRight, CircleHelp, Download, HandCoins, Home, LayoutGrid, LogOut, Menu, Monitor, Moon,
+  BarChart3, Bell, CalendarClock, ChevronRight, CircleHelp, Download, HandCoins, Home, IndianRupee, LayoutGrid, LogOut, Menu, Monitor, Moon,
   PiggyBank, Plus, Receipt, Scale, Search, Settings, Shield, Sparkles, Sun, Users, Wallet, Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ const NAV = [
     title: 'Money',
     items: [
       { to: '/expenses', label: 'Expenses', icon: Receipt },
+      { to: '/pay', label: 'Pay', icon: IndianRupee },
       { to: '/settlements', label: 'Repayments', icon: HandCoins },
       { to: '/recurring', label: 'Recurring', icon: CalendarClock },
       { to: '/budgets', label: 'Budgets', icon: PiggyBank },

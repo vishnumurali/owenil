@@ -97,7 +97,7 @@ export default function DashboardPage() {
             <BalanceCard label="You are owed" icon={<ArrowDownLeft />} tone="positive" loading={balances.isLoading} amount={primary.owedToMe} currency={currency} />
           </StaggerItem>
           <StaggerItem>
-            <BalanceCard label="You owe" icon={<ArrowUpRight />} tone="negative" loading={balances.isLoading} amount={primary.iOwe} currency={currency} />
+            <BalanceCard label="You owe" icon={<ArrowUpRight />} tone="negative" loading={balances.isLoading} amount={primary.iOwe} currency={currency} to="/pay" linkText={primary.iOwe > 0 ? 'Pay now' : 'See details'} />
           </StaggerItem>
           <StaggerItem>
             <Card className="relative h-full overflow-hidden p-5">
@@ -274,7 +274,7 @@ export default function DashboardPage() {
   );
 }
 
-function BalanceCard({ label, icon, tone, amount, currency, loading }: { label: string; icon: React.ReactNode; tone: 'positive' | 'negative'; amount: number; currency: string; loading: boolean }) {
+function BalanceCard({ label, icon, tone, amount, currency, loading, to = '/balances', linkText = 'See details' }: { label: string; icon: React.ReactNode; tone: 'positive' | 'negative'; amount: number; currency: string; loading: boolean; to?: string; linkText?: string }) {
   return (
     <Card className="h-full p-5">
       <p className="flex items-center gap-2 text-sm font-medium text-fg-muted">
@@ -286,8 +286,8 @@ function BalanceCard({ label, icon, tone, amount, currency, loading }: { label: 
       ) : (
         <AnimatedMoney amountMinor={amount} currency={currency} className={`mt-2 block font-display text-3xl font-semibold ${amount === 0 ? 'text-fg' : tone === 'positive' ? 'text-positive' : 'text-negative'}`} />
       )}
-      <Link to="/balances" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fg-muted hover:text-fg">
-        See details <ArrowRight className="size-3" />
+      <Link to={to} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fg-muted hover:text-fg">
+        {linkText} <ArrowRight className="size-3" />
       </Link>
     </Card>
   );
