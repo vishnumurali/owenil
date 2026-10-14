@@ -7,7 +7,9 @@ Owenil is an expense-sharing web app for friends, couples, families, travellers 
 > Owenil records shared expenses. It never moves money and never asks for bank or card details.
 
 - **Live URL:** https://vishnumurali.github.io/owenil/ (GitHub Pages, deployed on every push to `main`)
-- **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Supabase setup](docs/SUPABASE_SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Mobile](docs/MOBILE.md) · [Known limitations](docs/KNOWN_LIMITATIONS.md)
+- **Android app:** [download Owenil.apk](https://github.com/vishnumurali/owenil/releases/download/android-latest/Owenil.apk) (built, emulator-tested and published on every push; see [Android](docs/MOBILE.md)). Includes an Android-only **Pay with GPay** button that marks a payment paid when Google Pay confirms it.
+- **Web snapshot:** tag [`web-v1.0`](https://github.com/vishnumurali/owenil/tree/web-v1.0) is the web app as it was before the Android app was added.
+- **Docs:** [Architecture](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Supabase setup](docs/SUPABASE_SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Android app](docs/MOBILE.md) · [Known limitations](docs/KNOWN_LIMITATIONS.md)
 
 ## Features
 
@@ -32,6 +34,7 @@ Owenil is an expense-sharing web app for friends, couples, families, travellers 
 | Web | React 18.3.1, TypeScript 5.9.3 (strict), Vite 5.4.21, Tailwind CSS 3.4.17, Radix UI primitives (shadcn-style components), Framer Motion 11.18.2, Lucide 0.544.0, React Hook Form 7.63.0, Zod 3.25.76, TanStack Query 5.90.2, Recharts 2.15.4, React Router 6.30.6, Sonner 2.0.7 |
 | Backend | Supabase: Auth, Postgres with RLS, Storage, `pg_cron` (supabase-js 2.78.0) |
 | Hosting | GitHub Pages, built and published by GitHub Actions (`.github/workflows/deploy.yml`) |
+| Android | Capacitor 8.5.2 (the same app in the phone's WebView) plus a native UPI plugin; APK built, emulator-tested and published by `.github/workflows/android.yml` |
 | Tests | Vitest 2.1.9, React Testing Library 16.3.0, PGlite 0.3.14 (Postgres 17 compiled to WASM, used for offline database tests), Playwright 1.55.1 |
 | Shared logic | `packages/core` (`@owenil/core`): money, splitting engine, ledger, simplification, recurrence, analytics, validation, CSV |
 
@@ -59,7 +62,8 @@ scripts/                Migrate, seed demo data, set tester, icons, recurring tr
 tests/sql/              Offline DB tests (real migrations on PGlite + Supabase stubs)
 tests/db/               Hosted DB tests (real Supabase: RLS, storage, exports)
 tests/e2e/              Playwright browser tests
-.github/workflows/      Test, build and deploy to GitHub Pages
+.github/workflows/      Test, build and deploy to GitHub Pages; build, test and publish the Android app
+android/                Android project (Capacitor) incl. the native UPI plugin
 ```
 
 ## Quick start
@@ -89,7 +93,8 @@ npm run dev                      # http://localhost:5173/owenil/
 | `npm run db:tester -- you@example.com` | Allow an account to use the development Plus switch |
 | `npm run db:tester -- --mode off` | Turn the development switch off for everyone (production) |
 | `npm run recurring:run` | Run the recurring generator once (the same job `pg_cron` runs hourly) |
-| `git push` to `main` | Test, build and deploy to GitHub Pages (see [Deployment](docs/DEPLOYMENT.md)) |
+| `git push` to `main` | Test, build and deploy to GitHub Pages (see [Deployment](docs/DEPLOYMENT.md)), and build, emulator-test and publish the Android APK |
+| `npm run android:build` | Build the web app for Android and copy it into `android/` (Node 22; then `npx cap open android`) |
 
 ## Demo data
 

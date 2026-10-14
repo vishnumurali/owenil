@@ -24,5 +24,5 @@
       "@owenil/core": ["packages/core/src/index.ts"]
     }
   },
-  "include": ["src", "packages/core/src", "packages/core/test", "tests", "scripts/**/*.ts", "vite.config.ts", "vitest.db.config.ts", "playwright.config.ts"]
+  "include": ["src", "capacitor.config.ts", "packages/core/src", "packages/core/test", "tests", "scripts/**/*.ts", "vite.config.ts", "vitest.db.config.ts", "playwright.config.ts"]
 }

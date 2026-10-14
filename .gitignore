@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-android/
 coverage/
 playwright-report/
 test-results/
@@ -11,3 +12,9 @@ test-results/
 .env.*.local
 demo-credentials.local.json
 e2e-credentials.local.json
+
+# Android signing key (back it up somewhere safe; never commit)
+android-signing.local.*
+*.p12
+*.jks
+*.keystore

@@ -11,6 +11,10 @@ test.describe.configure({ mode: 'serial' });
 let groupUrl = '';
 let expenseUrl = '';
 
+/** The app's path for the current page, without the site's base path ("/owenil/" on the web, "/" in the Android build). */
+const BASE_PATH = new URL(process.env.E2E_BASE_URL ?? 'http://localhost:5173/owenil/').pathname;
+const appPath = (url: string) => new URL(url).pathname.slice(BASE_PATH.length).replace(/^\//, '');
+
 test('1. registration, email verification (when required) and login', async ({ page }) => {
   const email = `register.${Date.now()}@e2e.owenil.test`;
   const password = 'E2e-pass-' + Math.random().toString(36).slice(2, 10) + '9';
@@ -90,7 +94,7 @@ test('2. group creation', async ({ page }) => {
   await page.keyboard.press('Escape'); // close the automatic invite dialog
   await expect(page.getByRole('heading', { name: 'E2E Trip' })).toBeVisible();
   await expect(page.getByText('3 members')).toBeVisible();
-  groupUrl = new URL(page.url()).pathname.replace(/^\/owenil\//, '').replace(/\?.*$/, '');
+  groupUrl = appPath(page.url());
 });
 
 test('3–5. expense creation, split preview and balances (₹3,000 shared by three)', async ({ page }) => {
@@ -103,7 +107,7 @@ test('3–5. expense creation, split preview and balances (₹3,000 shared by th
   await expect(summary).toHaveCount(3);
   await page.getByRole('button', { name: 'Add expense' }).click();
   await expect(page).toHaveURL(/\/expenses\/[0-9a-f-]{36}$/);
-  expenseUrl = new URL(page.url()).pathname.replace(/^\/owenil\//, '');
+  expenseUrl = appPath(page.url());
   await expect(page.getByText('gets back ₹2,000.00')).toBeVisible();
   await expect(page.getByText('owes ₹1,000.00')).toHaveCount(2);
   await page.goto('dashboard');

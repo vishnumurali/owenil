@@ -1,76 +1,76 @@
-# Android and iOS continuation plan
+# Owenil for Android
 
-The web MVP was built so that the mobile apps reuse the backend and all business rules unchanged.
+The Android app is the same React app as the website, packaged with
+[Capacitor](https://capacitorjs.com) 8 (free, MIT licence) and running in the
+phone's WebView. Every screen, rule and fix ships to the website and the app
+together. One native addition exists only in the app: **Pay with GPay**.
 
-## What is reused as-is
+**Download (latest build):** https://github.com/vishnumurali/owenil/releases/download/android-latest/Owenil.apk
 
-| Piece | Reused from |
+## Install on a phone
+
+1. On the phone, open the link above (or the [android-latest release page](https://github.com/vishnumurali/owenil/releases/tag/android-latest)) and download **Owenil.apk**.
+2. Open the download. Android asks to allow installing apps from your browser: allow it once.
+3. Tap **Install**, then **Open**.
+
+New builds install over the old one and keep you signed in, because every build is signed with the same key. Android needs version 7.0 or newer.
+
+## Pay with GPay (Android app only)
+
+When you pay someone who has saved a UPI ID, in INR:
+
+1. **Pay with GPay** opens Google Pay directly, with their UPI ID, name, amount and a note filled in. **Other UPI app** lets you pick PhonePe, Paytm, BHIM or another app.
+2. You approve the payment in Google Pay.
+3. Google Pay reports the result back to the app:
+   - **Success:** Owenil marks it paid immediately and saves the UPI reference in the repayment note. No extra tap is needed.
+   - **Failure:** nothing is recorded.
+   - **Pending, or no answer** (for example you pressed Back): Owenil asks "Did it go through?", as on the website.
+
+This works for one expense and for the combined **Pay** tab. Browsers never show these buttons; there, the UPI link or QR code and the "Did it go through?" question are used, because websites can't receive the UPI result.
+
+## How it's built
+
+| Part | Where |
 |---|---|
-| Backend | The same Supabase project: Auth, RLS, RPCs, Storage, `pg_cron` |
-| Money and splitting | `@owenil/core`: `computeSplit`, `parseMoney`, `formatMoney`, `attributeExpense`, `simplifyDebts` |
-| Validation | `@owenil/core` Zod schemas (`expensePayloadSchema`, `settlementPayloadSchema`, …) |
-| Schedules and analytics | `occurrenceDate`, `upcomingOccurrences`, `totalsByMonth`, `evaluateBudgets` |
-| Data contracts | `src/types/db.ts` (move it into `packages/core` or a new `packages/api`) |
-| Balance derivation | `src/data/balances.ts` (pure; move it into `packages/core`) |
+| Web app, Android mode | `vite build --mode android` → `dist-android/`, base path `/`, settings in `.env.android`. Links that leave the app (invite links, email links) use `VITE_PUBLIC_URL`, the website. The page stays inside the safe area (no `viewport-fit=cover`), so the status and navigation bars never cover content |
+| Native project | `android/` (Capacitor template). App id `io.github.vishnumurali.owenil` |
+| UPI plugin | `android/app/src/main/java/io/github/vishnumurali/owenil/UpiPlugin.java`: `canPay` and `pay` (starts the UPI intent with `startActivityForResult` and returns the app's `response`). Registered in `MainActivity`. The manifest declares `<queries>` for `upi:` links and Google Pay (Android 11+ package visibility) |
+| JS bridge | `src/lib/native-upi.ts` (`isAndroidApp`, `payWithUpiApp`, `parseUpiResponse`) and `AndroidUpiPay` in `src/features/payments/PayDialog.tsx` |
+| Icons and splash | `npm run icons` renders the launcher icons (legacy, round, adaptive layers) and splash screens from the same design as the web icon |
+| Signing | A PKCS#12 key (alias `owenil`). CI reads it from the secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`. The owner's backup is `android-signing.local.p12` and `.txt` (gitignored) |
 
-The core package has no DOM or React dependency. It needs only `zod` and the standard `Intl` APIs. Hermes supports `Intl.NumberFormat`; enable full Intl in Expo SDK 50+ if you need narrow currency symbols.
+## Build pipeline
 
-## Steps
+`.github/workflows/android.yml` runs on every push to `main`:
+
+1. **build:**
+   - typecheck, then build the web app in Android mode;
+   - `cap sync`, then `gradlew assembleRelease`, signed, with version `1.0.<run number>`;
+   - check the package name, SDK levels and signature with `aapt2` and `apksigner`.
+2. **emulator-test:** boots an Android 14 emulator and runs `scripts/android-smoke.mjs` (Playwright's Android driver). It:
+   - installs and opens the app;
+   - checks the web app runs as the Android build;
+   - calls the native UPI plugin (`canPay`; `pay` reports a missing Google Pay and refuses non-UPI links);
+   - checks the sign-in page fits the screen and no link points at the phone itself.
+
+   Screenshots are kept as a run artifact.
+3. **publish:** only after the emulator test passes, replaces the `android-latest` pre-release with the new `Owenil.apk`.
+
+### Building locally (optional)
+
+Needs Node 22, JDK 21 and the Android SDK (Android Studio includes both).
 
 ```bash
-# 1. Convert to an npm workspace monorepo (web app moves into apps/web)
-#    root package.json:  "workspaces": ["packages/*", "apps/*"]
-git mv src apps/web/src   # plus index.html, vite.config.ts, public/, tailwind/postcss configs
-
-# 2. Create the Expo app
-npx create-expo-app@latest apps/mobile -t expo-template-blank-typescript
-cd apps/mobile
-npx expo install expo-router expo-secure-store expo-image-picker expo-camera expo-notifications \
-  react-native-safe-area-context react-native-screens @supabase/supabase-js react-native-url-polyfill
-npm i @owenil/core@* @tanstack/react-query zod
+npm run android:build          # vite build --mode android && cap sync android
+npx cap open android           # open in Android Studio, then Run ▶ on a phone or emulator
 ```
 
-### Supabase client on mobile
+To debug the app's WebView on a USB-connected phone, open `chrome://inspect` in desktop Chrome. Testing builds enable WebView debugging.
 
-```ts
-import 'react-native-url-polyfill/auto';
-import * as SecureStore from 'expo-secure-store';
-import { createClient } from '@supabase/supabase-js';
+## Limits and next steps
 
-const storage = {
-  getItem: SecureStore.getItemAsync,
-  setItem: SecureStore.setItemAsync,
-  removeItem: SecureStore.deleteItemAsync,
-};
-
-export const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-  auth: { storage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: 'pkce' },
-});
-```
-
-Sessions are stored in the Keychain on iOS and in Keystore-backed storage on Android. Note: SecureStore values are limited to about 2 KB, so use a chunking adapter if the session grows.
-
-### Platform work
-
-| Concern | Plan |
-|---|---|
-| Navigation | Expo Router tabs: Home, Groups, Add (+), Balances, More. Stacks for detail screens; deep links `owenil://join/group/<token>` and universal links on `vishnumurali.github.io/owenil/join/*` (the association files must sit at the domain root, so this needs the `vishnumurali.github.io` repository or a custom domain) |
-| Auth redirects | Add `owenil://auth/callback` to Supabase Redirect URLs; use `expo-linking` and `supabase.auth.exchangeCodeForSession` |
-| Camera and receipts | `expo-image-picker` / `expo-camera`, compressed under 5 MB, then uploaded to `receipts/<uid>/…` like the web app does (requires Plus) |
-| Push notifications | Add a `push_tokens` table (RLS: owner only). A database webhook on `notifications` insert calls a Supabase Edge Function that sends through Expo Push (free). Keep in-app notifications as the source of truth |
-| Offline | TanStack Query persistence (AsyncStorage) for reads. Financial writes stay online-only, and idempotency keys make retries safe |
-| Haptics and motion | `expo-haptics` on save and settle. Reanimated for balance and success animations; respect "reduce motion" |
-| Theming | Port the tokens from `src/index.css` into a TypeScript theme object (light and dark) |
-
-### Store releases
-
-```bash
-npm i -g eas-cli
-eas login
-eas build:configure
-eas build -p android --profile preview      # internal APK for testing
-eas build -p ios --profile preview          # needs an Apple Developer account
-eas submit -p android | ios                 # when ready
-```
-
-Before publishing, decide on real subscriptions (Google Play Billing, App Store IAP) and keep them behind a feature flag. Server-side entitlements already have `source = 'app_store' | 'play_store'`. Receipt validation must happen on a trusted server, such as an Edge Function, and never in the app.
+- **Testing builds.** The APK is installed from GitHub, not the Play Store. Publishing on Google Play needs a one-time $25 developer account, which isn't free, so it isn't done. With Play App Signing the existing key can serve as the upload key.
+- **Google Pay and personal UPI IDs.** Some UPI apps limit or decline payments to personal (non-merchant) UPI IDs when the payment is started from another app, or show a risk warning. If that happens, **Other UPI app** or scanning a QR code inside the UPI app still works. Owenil can't change that policy.
+- **Links open the website.** Invite links (`/join/…`) open in the browser. Android App Links into the app would need an `assetlinks.json` at the root of `vishnumurali.github.io` (the user-site repository) or a custom domain.
+- **iOS** works the same way (`npx cap add ios`), but building needs a Mac with Xcode, and installing on iPhones outside TestFlight needs a paid Apple developer account.
+- **A fully native UI** (React Native or Expo) can reuse `@owenil/core` (money, splitting, ledger, simplification, recurrence and UPI link rules) unchanged if the app ever needs it.

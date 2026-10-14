@@ -26,12 +26,16 @@
     "icons": "node scripts/generate-icons.mjs",
     "test:sql": "vitest run tests/sql",
     "test:all": "npm run typecheck && npm test && npm run test:db && npm run test:e2e",
-    "supabase:provision": "vite-node scripts/provision.ts"
+    "supabase:provision": "vite-node scripts/provision.ts",
+    "android:build": "vite build --mode android && cap sync android",
+    "android:smoke": "node scripts/android-smoke.mjs"
   },
   "engines": {
     "node": ">=18.17"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
     "@fontsource-variable/inter": "5.2.8",
     "@fontsource-variable/sora": "5.2.8",
     "@hookform/resolvers": "3.10.0",
@@ -63,6 +67,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@electric-sql/pglite": "0.3.14",
     "@playwright/test": "1.55.1",
     "@testing-library/jest-dom": "6.8.0",

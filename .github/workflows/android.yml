@@ -1,0 +1,118 @@
+# Builds the Owenil Android app (APK), tests it on an Android emulator and,
+# if that passes, publishes it at a permanent download link:
+#   https://github.com/vishnumurali/owenil/releases/download/android-latest/Owenil.apk
+# Needs repository secrets ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD
+# (the signing key; every version must use the same one) and the same
+# VITE_* repository variables as the website.
+name: Android app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - name: Build the web app for Android
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ENABLE_DEV_TOOLS: ${{ vars.VITE_ENABLE_DEV_TOOLS }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "::error::Repository variable VITE_SUPABASE_URL is not set"; exit 1; }
+          npx tsc --noEmit -p tsconfig.json
+          npx vite build --mode android
+      - run: npx cap sync android
+      - name: Build the signed APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          OWENIL_VERSION_CODE: ${{ github.run_number }}
+          OWENIL_VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Secret ANDROID_KEYSTORE_BASE64 is not set"; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/owenil.p12"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/owenil.p12"
+          cd android && ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Owenil.apk"
+          rm -f "$RUNNER_TEMP/owenil.p12"
+      - name: Check the APK (package, version, signature)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt2" dump badging Owenil.apk | grep -E "^(package|sdkVersion|targetSdkVersion|application-label):"
+          "$BT/apksigner" verify --print-certs Owenil.apk | grep -E "certificate (DN|SHA-256 digest)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: owenil-apk
+          path: Owenil.apk
+          if-no-files-found: error
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: owenil-apk
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install, open and test the app on Android 14
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: node scripts/android-smoke.mjs Owenil.apk
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-smoke-screenshots
+          path: android-smoke/
+          if-no-files-found: ignore
+
+  publish:
+    needs: emulator-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: owenil-apk
+      - name: Publish at the permanent "android-latest" download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest Owenil.apk --prerelease --target "$GITHUB_SHA" \
+            --title "Owenil for Android (build ${{ github.run_number }})" \
+            --notes "Install on your phone: open this page on the phone, tap Owenil.apk, then allow installing from your browser when Android asks. Built from ${GITHUB_SHA::7}. This build is for testing."

@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { copyFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'node:url';
 
 // Owenil is served from GitHub Pages at https://vishnumurali.github.io/owenil/.
 // Override with VITE_BASE_PATH (must start and end with "/") for other hosts.
-const base = process.env.VITE_BASE_PATH ?? '/owenil/';
+// `--mode android` builds the copy packaged in the Android app (see .env.android).
 
 // GitHub Pages can't send response headers, so the policy ships as a <meta> tag.
 // (frame-ancestors is ignored in <meta>; public/theme-init.js refuses framing instead.)
@@ -25,6 +25,18 @@ const CSP = [
   "form-action 'self'",
   'upgrade-insecure-requests',
 ].join('; ');
+
+/**
+ * The Android app shows pages inside the safe area (below the status bar,
+ * above the navigation bar) instead of edge-to-edge, so no screen needs
+ * system-bar padding. Capacitor follows the page's viewport-fit value.
+ */
+function androidViewport(): Plugin {
+  return {
+    name: 'owenil-android-viewport',
+    transformIndexHtml: (html) => html.replace(', viewport-fit=cover', ''),
+  };
+}
 
 /** Static-host extras for production builds: security meta tags and a 404.html SPA fallback. */
 function staticHosting(): Plugin {
@@ -46,9 +58,13 @@ function staticHosting(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const fileEnv = loadEnv(mode, process.cwd(), 'VITE_');
+  const android = mode === 'android';
+  const base = process.env.VITE_BASE_PATH ?? fileEnv.VITE_BASE_PATH ?? '/owenil/';
+  return {
   base,
-  plugins: [react(), staticHosting()],
+  plugins: [react(), staticHosting(), ...(android ? [androidViewport()] : [])],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -56,7 +72,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: android ? 'dist-android' : 'dist',
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 900,
@@ -83,4 +99,5 @@ export default defineConfig({
     hookTimeout: 180_000,
     css: false,
   },
+  };
 });
