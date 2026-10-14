@@ -10,7 +10,9 @@ import { errorMessage } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { useTheme, type ThemePreference } from '@/lib/theme';
 import { cn, safeNextPath } from '@/lib/utils';
-import { qk, useMe } from '@/data/queries';
+import { qk, useMe, useMyPhone } from '@/data/queries';
+import { formatPhone, normalizePhone, saveMyPhone } from '@/data/people';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/button';
 import { Field, Input, NativeSelect } from '@/components/ui/input';
@@ -22,6 +24,8 @@ const STEPS = ['You', 'Look', 'Start'] as const;
 export default function OnboardingPage() {
   useDocumentTitle('Welcome');
   const me = useMe();
+  const myPhone = useMyPhone();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -29,7 +33,12 @@ export default function OnboardingPage() {
   const [step, setStep] = React.useState(0);
   const [name, setName] = React.useState('');
   const [currency, setCurrency] = React.useState('INR');
+  const [phone, setPhone] = React.useState<string | null>(null);
+  const [phoneError, setPhoneError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  // Saved number, else the one typed at sign-up (kept if it couldn't be saved then).
+  const signupPhone = typeof user?.user_metadata?.phone === 'string' ? (user.user_metadata.phone as string) : '';
+  const phoneValue = phone ?? (myPhone.data ? formatPhone(myPhone.data) : signupPhone ? formatPhone(signupPhone) : '');
 
   React.useEffect(() => {
     if (me.data) {
@@ -39,6 +48,24 @@ export default function OnboardingPage() {
   }, [me.data]);
 
   if (!me.data) return <FullPageSpinner />;
+
+  // Step 1 → 2: the phone number is required (not verified by SMS yet).
+  const continueFromYou = async () => {
+    setPhoneError(null);
+    const e164 = normalizePhone(phoneValue);
+    if (!e164) return setPhoneError('Enter your mobile number, for example +91 98765 43210.');
+    if (e164 !== myPhone.data) {
+      setBusy(true);
+      try {
+        qc.setQueryData(qk.myPhone, await saveMyPhone(e164));
+      } catch (e) {
+        setBusy(false);
+        return setPhoneError(errorMessage(e));
+      }
+      setBusy(false);
+    }
+    setStep(1);
+  };
 
   const finish = async (destination: string) => {
     setBusy(true);
@@ -78,12 +105,15 @@ export default function OnboardingPage() {
                     <p className="mt-2 text-fg-muted">This is how friends will see you.</p>
                   </div>
                   <Field label="Your name" htmlFor="ob-name"><Input id="ob-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoFocus /></Field>
+                  <Field label="Mobile number" htmlFor="ob-phone" error={phoneError ?? undefined} hint="Friends who have your number can find you. Never shown to anyone.">
+                    <Input id="ob-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" value={phoneValue} onChange={(e) => setPhone(e.target.value)} maxLength={24} />
+                  </Field>
                   <Field label="Usual currency" htmlFor="ob-cur" hint="You can use any currency on individual expenses.">
                     <NativeSelect id="ob-cur" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                       {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
                     </NativeSelect>
                   </Field>
-                  <Button size="lg" className="w-full" disabled={!name.trim()} onClick={() => setStep(1)}>Continue <ArrowRight /></Button>
+                  <Button size="lg" className="w-full" disabled={!name.trim() || myPhone.isLoading} loading={busy} onClick={() => void continueFromYou()}>Continue <ArrowRight /></Button>
                 </div>
               )}
               {step === 1 && (

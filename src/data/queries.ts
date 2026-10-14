@@ -20,6 +20,7 @@ export const qk = {
   groupLedger: (id: string) => ['group-ledger', id] as const,
   groupInvites: (id: string) => ['group-invites', id] as const,
   friends: ['friends'] as const,
+  myPhone: ['my-phone'] as const,
   balances: ['balances'] as const,
   expenses: (f: unknown) => ['expenses', f] as const,
   expense: (id: string) => ['expense', id] as const,
@@ -105,6 +106,20 @@ export function useContacts() {
  * Someone's UPI ID, if they saved one and the caller may see it (themselves,
  * a current friend or an active group co-member). Null otherwise.
  */
+/** The signed-in user's phone number (E.164), or null. Only the owner can read it. */
+export function useMyPhone() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: qk.myPhone,
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const row = unwrap(await supabase.from('user_contact_info').select('phone_e164').eq('user_id', user!.id).maybeSingle()) as { phone_e164: string | null } | null;
+      return row?.phone_e164 ?? null;
+    },
+  });
+}
+
 export function useUpiId(userId: string | null | undefined) {
   const { user } = useAuth();
   return useQuery({

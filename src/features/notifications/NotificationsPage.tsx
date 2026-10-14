@@ -12,7 +12,7 @@ import type { Notification } from '@/types/db';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/misc';
-import { EmptyState, ErrorState, PageHeader } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader } from '@/components/ui/layout-bits';
 
 function iconFor(kind: string) {
   if (kind.startsWith('expense') || kind.startsWith('recurring_expense')) return Receipt;
@@ -51,7 +51,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div>
+    <FitScreen>
       <PageHeader
         title="Notifications"
         description={unread.length ? `${unread.length} unread` : 'You’re all caught up'}
@@ -62,6 +62,7 @@ export default function NotificationsPage() {
           </>
         }
       />
+      <FitBody>
       <Card className="divide-y divide-border">
         {notifications.isLoading ? (
           <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
@@ -89,6 +90,7 @@ export default function NotificationsPage() {
           <EmptyState illustration="notifications" title="No notifications" description="We’ll let you know when friends add expenses, record repayments or invite you." />
         )}
       </Card>
-    </div>
+      </FitBody>
+    </FitScreen>
   );
 }

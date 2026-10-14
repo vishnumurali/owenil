@@ -31,6 +31,7 @@ export interface Preferences {
   notify_budget_alerts: boolean;
   notify_recurring: boolean;
   discoverable_by_email: boolean;
+  discoverable_by_phone: boolean;
 }
 
 export interface Entitlement {

@@ -204,7 +204,7 @@ export default function GroupFormPage() {
         )}
 
         {err.root && <p role="alert" className="rounded-xl bg-negative-soft px-4 py-3 text-sm text-negative">{err.root.message}</p>}
-        <div className="flex justify-end gap-2">
+        <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t border-border/60 bg-canvas/95 px-4 py-3 backdrop-blur safe-bottom sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
           <Button type="submit" loading={form.formState.isSubmitting}>{editing ? 'Save changes' : 'Create group'}</Button>
         </div>

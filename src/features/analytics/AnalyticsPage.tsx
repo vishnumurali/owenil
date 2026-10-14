@@ -12,12 +12,13 @@ import { Card } from '@/components/ui/card';
 import { NativeSelect } from '@/components/ui/input';
 import { Badge, Skeleton, Switch } from '@/components/ui/misc';
 import { Segmented } from '@/components/ui/segmented';
-import { EmptyState, ErrorState, PageHeader, Stagger, StaggerItem } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader, Stagger, StaggerItem } from '@/components/ui/layout-bits';
 import { ChartCard, MoneyBarChart, MoneyLineChart, RankedBars } from '@/components/charts';
 import { CategoryIcon, PlusGate } from '@/components/domain';
 import { convertRows } from './fx';
 
 type Range = '6m' | '12m' | 'ytd' | '24m';
+type Section = 'overview' | 'categories' | 'trends' | 'breakdown' | 'largest';
 
 function rangeStart(range: Range, today: string): string {
   const [y, m] = today.split('-').map(Number) as [number, number];
@@ -32,6 +33,7 @@ export default function AnalyticsPage() {
   const isPlus = !!me.data?.isPlus;
   const today = todayISO();
   const [range, setRange] = React.useState<Range>('6m');
+  const [section, setSection] = React.useState<Section>('overview');
   const [measure, setMeasure] = React.useState<Measure>('myShareMinor');
   const [currency, setCurrency] = React.useState<string | null>(null);
   const [convert, setConvert] = React.useState(false);
@@ -85,24 +87,28 @@ export default function AnalyticsPage() {
   if (spending.isError) return <ErrorState error={spending.error} onRetry={() => spending.refetch()} />;
 
   return (
-    <div className="space-y-6">
+    <FitScreen>
       <PageHeader title="Analytics" description="Where shared money goes. Figures come from your recorded expenses." />
 
-      <Card className="flex flex-wrap items-center gap-3 p-3">
+      <div className="-mx-4 mb-3 flex shrink-0 items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
         <Segmented<Range> size="sm" value={isPlus ? range : '6m'} onChange={setRange} ariaLabel="Date range"
           options={[{ value: '6m', label: '6 months' }, { value: '12m', label: '12 months', disabled: !isPlus }, { value: 'ytd', label: 'This year', disabled: !isPlus }, { value: '24m', label: '2 years', disabled: !isPlus }]} />
         <Segmented<Measure> size="sm" value={measure} onChange={setMeasure} ariaLabel="Measure"
           options={[{ value: 'myShareMinor', label: 'My share' }, { value: 'myPaidMinor', label: 'I paid' }, { value: 'totalMinor', label: 'Expense totals' }]} />
-        <NativeSelect value={reportCurrency} onChange={(e) => setCurrency(e.target.value)} aria-label="Report currency" className="h-8 w-28 text-xs">
+        <NativeSelect value={reportCurrency} onChange={(e) => setCurrency(e.target.value)} aria-label="Report currency" className="h-9 w-24 shrink-0 text-xs">
           {[...new Set([reportCurrency, ...currenciesSeen])].map((c) => <option key={c} value={c}>{c}</option>)}
         </NativeSelect>
         {isPlus && currenciesSeen.length > 1 && (
-          <label className="flex items-center gap-2 text-xs text-fg-muted">
+          <label className="flex shrink-0 items-center gap-2 text-xs text-fg-muted">
             <Switch checked={convert} onCheckedChange={setConvert} aria-label="Convert other currencies" /> Convert with my saved rates
           </label>
         )}
-        {!isPlus && <span className="text-xs text-fg-muted">Longer ranges & detailed reports with <Link to="/plus" className="font-medium text-plus hover:underline">Plus</Link></span>}
-      </Card>
+        {!isPlus && <span className="shrink-0 text-xs text-fg-muted">Longer ranges & detailed reports with <Link to="/plus" className="font-medium text-plus hover:underline">Plus</Link></span>}
+      </div>
+      <Segmented<Section> size="sm" value={section} onChange={setSection} ariaLabel="Analytics sections" className="mb-3 w-full shrink-0"
+        options={[{ value: 'overview', label: 'Overview' }, { value: 'categories', label: 'Categories' }, { value: 'trends', label: 'Trends' }, { value: 'breakdown', label: 'Breakdown' }, { value: 'largest', label: 'Largest' }]} />
+
+      <FitBody className="space-y-4">
 
       {excluded.size > 0 && (
         <p className="flex items-start gap-2 rounded-xl bg-muted px-4 py-3 text-xs text-fg-muted">
@@ -119,7 +125,8 @@ export default function AnalyticsPage() {
         <Card><EmptyState illustration="chart" title="No spending yet" description="Add a few expenses and your trends will appear here." /></Card>
       ) : (
         <>
-          <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {section === 'overview' && (<>
+          <Stagger className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StaggerItem><Stat label={`${measureLabel} · period`} value={formatMoney(total, reportCurrency)} /></StaggerItem>
             <StaggerItem>
               <Stat label="This month" value={formatMoney(thisMonth, reportCurrency)}
@@ -133,22 +140,23 @@ export default function AnalyticsPage() {
             <StaggerItem><Stat label="Expenses" value={String(rows.length)} extra={<span className="text-xs text-fg-subtle">{rows.filter((r) => r.isRecurring).length} recurring</span>} /></StaggerItem>
           </Stagger>
 
-          <div className="grid gap-6 lg:grid-cols-5">
-            <ChartCard className="lg:col-span-3" title="Monthly spending" subtitle={`${measureLabel} (${reportCurrency})`}
+            <ChartCard title="Monthly spending" subtitle={`${measureLabel} (${reportCurrency})`}
               table={{ headers: ['Month', measureLabel], rows: monthly.map((m) => [monthLabel(m.period), formatMoney(m.amountMinor, reportCurrency)]) }}>
-              <MoneyBarChart data={monthly.map((m) => ({ label: monthLabel(m.period), value: m.amountMinor }))} currency={reportCurrency} seriesName={measureLabel} />
+              <MoneyBarChart data={monthly.map((m) => ({ label: monthLabel(m.period), value: m.amountMinor }))} currency={reportCurrency} seriesName={measureLabel} height={200} />
             </ChartCard>
-            <ChartCard className="lg:col-span-2" title="By category" subtitle="Selected period">
+          </>)}
+          {section === 'categories' && (
+            <ChartCard title="By category" subtitle="Selected period">
               <RankedBars currency={reportCurrency} rows={totalsBy(rows, 'categoryId', measure).map((c) => ({
                 key: c.key ?? 'none', label: c.key ? catMap.get(c.key)?.name ?? 'Other' : 'Uncategorised', value: c.amountMinor,
                 icon: <CategoryIcon category={c.key ? catMap.get(c.key) : null} size="sm" className="size-6 rounded-md" />,
               }))} />
             </ChartCard>
-          </div>
+          )}
 
-          {isPlus ? (
+          {section !== 'overview' && section !== 'categories' && (isPlus ? (
             <>
-              <div className="grid gap-6 lg:grid-cols-2">
+              {section === 'trends' && <div className="grid gap-4 lg:grid-cols-2">
                 <ChartCard title="Weekly spending" subtitle="Last 12 weeks"
                   table={{ headers: ['Week of', measureLabel], rows: totalsByWeek(scoped, measure, 12, today).map((w) => [formatDate(w.period), formatMoney(w.amountMinor, reportCurrency)]) }}>
                   <MoneyBarChart data={totalsByWeek(scoped, measure, 12, today).map((w) => ({ label: formatDate(w.period, { day: 'numeric', month: 'short' }), value: w.amountMinor }))} currency={reportCurrency} seriesName={measureLabel} height={220} />
@@ -157,8 +165,8 @@ export default function AnalyticsPage() {
                   table={{ headers: ['Month', 'This period', 'Year before'], rows: yoy.map((y) => [y.label, formatMoney(y.value, reportCurrency), formatMoney(y.value2, reportCurrency)]) }}>
                   <MoneyLineChart data={yoy} currency={reportCurrency} names={['This period', 'Year before']} height={220} />
                 </ChartCard>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-3">
+              </div>}
+              {section === 'breakdown' && <div className="grid gap-4 lg:grid-cols-3">
                 <ChartCard title="By group">
                   <RankedBars currency={reportCurrency} rows={totalsBy(rows, 'groupId', measure).map((g) => ({ key: g.key ?? 'none', label: g.key ? groups.data?.find((x) => x.id === g.key)?.name ?? 'Former group' : 'Between friends', value: g.amountMinor }))} />
                 </ChartCard>
@@ -168,8 +176,8 @@ export default function AnalyticsPage() {
                 <ChartCard title="Yearly totals" table={{ headers: ['Year', measureLabel], rows: totalsByYear(scoped, measure).map((y) => [y.period, formatMoney(y.amountMinor, reportCurrency)]) }}>
                   <RankedBars currency={reportCurrency} rows={totalsByYear(scoped, measure).reverse().map((y) => ({ key: y.period, label: y.period, value: y.amountMinor }))} />
                 </ChartCard>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+              </div>}
+              {section === 'largest' && <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
                 <Card className="p-5">
                   <h3 className="mb-3 font-semibold">Largest expenses</h3>
                   <ul className="divide-y divide-border">
@@ -188,24 +196,25 @@ export default function AnalyticsPage() {
                 <div className="space-y-4">
                   <Stat label="Recurring expenses · period" value={formatMoney(recurringTotal, reportCurrency)} />
                   <Stat label="Repayments recorded · period" value={formatMoney(settledTotal, reportCurrency)} extra={<span className="text-xs text-fg-subtle">{reportCurrency} only</span>} />
-                  <Link to="/budgets" className="block rounded-2xl border border-border bg-surface p-5 text-sm font-medium shadow-card hover:border-primary">Budgets vs actual →</Link>
+                  <Link to="/budgets" className="block rounded-2xl bg-surface p-5 text-sm font-medium shadow-tile ring-1 ring-border/60 hover:ring-primary">Budgets vs actual →</Link>
                 </div>
-              </div>
+              </div>}
             </>
           ) : (
             <PlusGate feature="Detailed analytics" description="Weekly and yearly views, year-over-year comparisons, group and payer breakdowns, largest expenses, and currency conversion." />
-          )}
+          ))}
         </>
       )}
-    </div>
+      </FitBody>
+    </FitScreen>
   );
 }
 
 function Stat({ label, value, extra }: { label: string; value: string; extra?: React.ReactNode }) {
   return (
-    <Card className="h-full p-5">
-      <p className="text-sm text-fg-muted">{label}</p>
-      <p className="mt-1 font-display text-2xl font-semibold tabular">{value}</p>
+    <Card className="h-full p-4 sm:p-5">
+      <p className="truncate text-xs text-fg-muted sm:text-sm">{label}</p>
+      <p className="mt-1 truncate font-display text-lg font-semibold tabular sm:text-2xl">{value}</p>
       {extra && <div className="mt-1">{extra}</div>}
     </Card>
   );

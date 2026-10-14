@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/misc';
-import { EmptyState, PageHeader } from '@/components/ui/layout-bits';
+import { EmptyState, FitBody, FitScreen, PageHeader } from '@/components/ui/layout-bits';
 import { PayDialog, type PayRequest } from './PayDialog';
 import { usePaymentContext } from './usePaymentContext';
 
@@ -47,8 +47,9 @@ export default function PayPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <FitScreen className="mx-auto w-full max-w-3xl">
       <PageHeader title="Pay" description="Everything you owe each person, combined across groups. Pay it in one go and Owenil records it everywhere." />
+      <FitBody className="space-y-6">
 
       {!ctx ? (
         <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
@@ -98,8 +99,9 @@ export default function PayPage() {
           If someone also owes you in another group, that amount is subtracted, so you only pay the difference.
         </p>
       )}
+      </FitBody>
       <PayDialog request={request} onClose={() => setRequest(null)} />
-    </div>
+    </FitScreen>
   );
 }
 

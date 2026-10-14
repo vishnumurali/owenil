@@ -18,6 +18,8 @@ const appPath = (url: string) => new URL(url).pathname.slice(BASE_PATH.length).r
 test('1. registration, email verification (when required) and login', async ({ page }) => {
   const email = `register.${Date.now()}@e2e.owenil.test`;
   const password = 'E2e-pass-' + Math.random().toString(36).slice(2, 10) + '9';
+  // A fresh, valid Indian mobile number (numbers are unique per account).
+  const mobile = `9${String(Math.floor(Math.random() * 1e9)).padStart(9, '0')}`;
   // Is "Confirm email" on? (Public Auth settings; it is switched off while testing.)
   const settings = (await (await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
     headers: { apikey: process.env.VITE_SUPABASE_PUBLISHABLE_KEY! },
@@ -41,6 +43,7 @@ test('1. registration, email verification (when required) and login', async ({ p
   await page.goto('register');
   await page.getByLabel('Your name').fill('E2E Newcomer');
   await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Mobile number').fill(`0${mobile.slice(0, 5)} ${mobile.slice(5)}`);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByLabel('Confirm').fill(password);
   await page.getByRole('checkbox').check();
@@ -68,13 +71,19 @@ test('1. registration, email verification (when required) and login', async ({ p
     await page.getByRole('button', { name: 'Sign in' }).click();
   }
 
-  // The new account (signed in straight away when verification is off) lands on onboarding.
+  // The new account (signed in straight away when verification is off) lands on onboarding,
+  // which asks for the mobile number (kept from sign-up when it could be saved then).
   await expect(page.getByText('Let’s set you up')).toBeVisible();
+  await page.getByLabel('Mobile number').fill(`+91 ${mobile}`);
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: /Skip/ }).click();
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole('heading', { name: 'E2E Newcomer' })).toBeVisible();
+  const db2 = await pgClient();
+  const saved = await db2.query<{ phone: string }>('select c.phone_e164 as phone from public.user_contact_info c join auth.users u on u.id = c.user_id where u.email = $1', [email]);
+  await db2.end();
+  expect(saved.rows[0]?.phone).toBe(`+91${mobile}`);
   await logout(page);
 
   // (d) The chosen password works for a fresh sign-in.
@@ -230,18 +239,25 @@ test('10. data persists across a browser refresh and new session', async ({ page
 
 test('11. moving between pages by clicking always shows the page', async ({ page }) => {
   await login(page, accounts!.alice);
-  const nav = page.getByRole('navigation', { name: 'Main' });
-  const pages: [string, RegExp][] = [
-    ['Groups', /Groups/], ['Expenses', /Expenses/], ['Balances', /Balances/], ['Analytics', /Analytics/],
-    ['Repayments', /Repayments/], ['Friends', /Friends/], ['Recurring', /Recurring/], ['Dashboard', /E2E Alice/],
+  const rail = page.getByRole('navigation', { name: 'Main' });
+  // Main places are on the rail; the rest open from the "All" launcher.
+  const pages: [string, RegExp, 'rail' | 'launcher'][] = [
+    ['Groups', /Groups/, 'rail'], ['Expenses', /Expenses/, 'rail'], ['Balances', /Balances/, 'rail'], ['Analytics', /Analytics/, 'launcher'],
+    ['Repayments', /Repayments/, 'launcher'], ['Friends', /Friends/, 'rail'], ['Recurring', /Recurring/, 'launcher'], ['Home', /E2E Alice/, 'rail'],
   ];
-  for (const [link, heading] of pages) {
-    await nav.getByRole('link', { name: link, exact: true }).click();
+  for (const [link, heading, where] of pages) {
+    if (where === 'rail') {
+      await rail.getByRole('link', { name: link, exact: true }).click();
+    } else {
+      await page.getByRole('button', { name: 'All', exact: true }).click();
+      await page.getByRole('navigation', { name: 'All sections' }).getByRole('link', { name: link, exact: true }).click();
+    }
     await expect(page.locator('main h1').first()).toContainText(heading);
     // Present AND visible: a stuck page transition used to leave it at opacity 0.
     await expect(pageContent(page)).toHaveCSS('opacity', '1');
   }
-  await page.getByRole('link', { name: /^Add expense/ }).first().click();
+  await page.getByRole('button', { name: 'Quick actions' }).click();
+  await page.getByRole('navigation', { name: 'Quick actions' }).getByRole('link', { name: /^Add expense/ }).click();
   await expect(page.getByRole('heading', { name: 'Add an expense' })).toBeVisible();
   await expect(pageContent(page)).toHaveCSS('opacity', '1');
   await page.goBack();
@@ -310,4 +326,32 @@ test('13. Pay tab combines everything owed to one person into one payment', asyn
   await logout(page);
   await login(page, accounts!.alice);
   await expect(page.getByText('You are owed').locator('..').locator('..')).toContainText('₹0.00');
+});
+
+test('14. add a friend by email or phone: registered people can be added, others invited', async ({ page }) => {
+  await login(page, accounts!.alice);
+  await page.goto('friends');
+  await page.getByRole('button', { name: 'Add friend' }).click();
+  const dialog = page.getByRole('dialog');
+  // A registered person, found by email (case doesn't matter): shown, and can be added.
+  await dialog.getByLabel('Email or phone number').fill(accounts!.xena.email.toUpperCase());
+  await dialog.getByRole('button', { name: 'Find', exact: true }).click();
+  await expect(dialog.getByTestId('person-found')).toContainText('E2E Xena');
+  await dialog.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(dialog.getByText('Request sent')).toBeVisible();
+  // Someone who isn't on Owenil: "Not registered", with ready-made invitations.
+  const unknown = `98765${String(Math.floor(Math.random() * 1e5)).padStart(5, '0')}`;
+  await dialog.getByLabel('Email or phone number').fill(unknown);
+  await dialog.getByRole('button', { name: 'Find', exact: true }).click();
+  await expect(dialog.getByTestId('person-not-found')).toContainText('Not registered on Owenil');
+  await dialog.getByRole('button', { name: /Invite them to Owenil/ }).click();
+  await expect(dialog.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', new RegExp(`^https://wa\\.me/91${unknown}\\?text=`));
+  await expect(dialog.getByRole('link', { name: 'SMS' })).toHaveAttribute('href', new RegExp(`^sms:\\+91${unknown}\\?body=`));
+  await page.keyboard.press('Escape');
+  await logout(page);
+  // Xena sees the friend request.
+  await login(page, accounts!.xena);
+  await page.goto('friends');
+  await expect(page.getByText('Friend requests')).toBeVisible();
+  await expect(page.getByText('E2E Alice', { exact: true }).first()).toBeVisible();
 });

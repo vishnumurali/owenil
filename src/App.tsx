@@ -1,6 +1,7 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { lazyPage } from '@/lib/lazy-page';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { listenForAppLinks } from '@/lib/native-auth';
 import { isSupabaseConfigured } from '@/lib/env';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useMe } from '@/data/queries';
@@ -18,6 +19,7 @@ const GroupForm = lazyPage(() => import('@/features/groups/GroupFormPage'));
 const JoinPage = lazyPage(() => import('@/features/groups/JoinPage'));
 const FriendsPage = lazyPage(() => import('@/features/friends/FriendsPage'));
 const FriendDetail = lazyPage(() => import('@/features/friends/FriendDetailPage'));
+const ContactsPage = lazyPage(() => import('@/features/friends/ContactsPage'));
 const ExpensesPage = lazyPage(() => import('@/features/expenses/ExpensesPage'));
 const ExpenseFormPage = lazyPage(() => import('@/features/expenses/ExpenseFormPage'));
 const ExpenseDetail = lazyPage(() => import('@/features/expenses/ExpenseDetailPage'));
@@ -63,10 +65,20 @@ function PublicOnly({ children }: { children: JSX.Element }) {
   return children;
 }
 
+/** Android app: finishes Google sign-in and email links that come back through the app's own link. */
+function AppLinks() {
+  const navigate = useNavigate();
+  const nav = useRef(navigate);
+  nav.current = navigate;
+  useEffect(() => listenForAppLinks((route) => nav.current(route, { replace: true })), []);
+  return null;
+}
+
 export function App() {
   if (!isSupabaseConfigured) return <SetupRequired />;
   return (
     <Suspense fallback={<FullPageSpinner />}>
+      <AppLinks />
       <Routes>
         <Route path="/" element={<LandingOrApp />} />
         <Route path="/login" element={<PublicOnly><AuthPages mode="login" /></PublicOnly>} />
@@ -83,6 +95,7 @@ export function App() {
           <Route path="/groups/:groupId/edit" element={<GroupForm />} />
           <Route path="/join/:kind/:token" element={<JoinPage />} />
           <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/friends/contacts" element={<ContactsPage />} />
           <Route path="/friends/:friendId" element={<FriendDetail />} />
           <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/expenses/new" element={<ExpenseFormPage />} />

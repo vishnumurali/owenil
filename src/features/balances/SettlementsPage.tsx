@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Field, NativeSelect, Textarea } from '@/components/ui/input';
 import { Badge, Skeleton } from '@/components/ui/misc';
 import { Dialog } from '@/components/ui/dialog';
-import { EmptyState, ErrorState, PageHeader } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader } from '@/components/ui/layout-bits';
 import { SettleUpDialog } from './SettleUpDialog';
 
 const METHOD: Record<Settlement['method'], string> = { cash: 'Cash', upi: 'UPI', bank_transfer: 'Bank transfer', card: 'Card', other: 'Other' };
@@ -50,18 +50,19 @@ export default function SettlementsPage() {
   };
 
   return (
-    <div>
+    <FitScreen>
       <PageHeader
         title="Repayments"
         description="Every recorded repayment, including reversals. Records only — Owenil never moves money."
         actions={<Button onClick={() => setRecordOpen(true)}><HandCoins /> Record repayment</Button>}
       />
-      <div className="mb-4 max-w-xs">
+      <div className="mb-3 max-w-xs shrink-0">
         <NativeSelect value={groupId} onChange={(e) => setGroupId(e.target.value)} aria-label="Filter by group">
           <option value="">All groups & friends</option>
           {(groups.data ?? []).map((g) => <option key={g.id} value={g.id}>{g.emoji} {g.name}</option>)}
         </NativeSelect>
       </div>
+      <FitBody>
       <Card className="divide-y divide-border">
         {settlements.isLoading ? (
           <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
@@ -99,6 +100,7 @@ export default function SettlementsPage() {
           <EmptyState illustration="balanced" title="No repayments yet" description="When someone pays back what they owe, record it here so balances stay accurate." />
         )}
       </Card>
+      </FitBody>
       <SettleUpDialog open={recordOpen} onOpenChange={setRecordOpen} defaults={{ groupId: groupId || undefined }} />
       <Dialog open={!!reversing} onOpenChange={(o) => !o && setReversing(null)} title="Reverse this repayment?" description="Use this if it was recorded by mistake or the payment failed. The original record stays in history."
         footer={<><Button variant="outline" onClick={() => setReversing(null)}>Cancel</Button><Button variant="danger" onClick={reverse} loading={busy}>Reverse repayment</Button></>}>
@@ -106,6 +108,6 @@ export default function SettlementsPage() {
           <Textarea id="rev-reason" rows={2} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. UPI transfer failed" />
         </Field>
       </Dialog>
-    </div>
+    </FitScreen>
   );
 }

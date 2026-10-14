@@ -241,6 +241,48 @@ async function main() {
   check(layout.localhostLinks === 0, 'No links point at the phone itself');
   await screenshot('3-sign-in.png');
 
+  // Plugins the app relies on are built in.
+  const plugins = await page.evaluate(() => ['App', 'Browser', 'Upi', 'Contacts'].filter((p) => !window.Capacitor?.isPluginAvailable?.(p)));
+  check(plugins.length === 0, 'Native plugins present (App, Browser, Upi, Contacts)', plugins.length ? `missing: ${plugins.join(', ')}` : '');
+
+  // Phone contacts: add one to the emulator, allow access, read it through the plugin.
+  try {
+    await adb(['shell', 'content insert --uri content://com.android.contacts/raw_contacts --bind account_type:n: --bind account_name:n:']);
+    const rawIds = [...(await adb(['shell', 'content query --uri content://com.android.contacts/raw_contacts --projection _id'])).matchAll(/_id=(\d+)/g)].map((m) => Number(m[1]));
+    if (!rawIds.length) throw new Error('could not create a test contact');
+    const rawId = Math.max(...rawIds);
+    const addData = (mime, value) =>
+      adb(['shell', `content insert --uri content://com.android.contacts/data --bind raw_contact_id:i:${rawId} --bind mimetype:s:${mime} --bind data1:s:'${value}'`]);
+    await addData('vnd.android.cursor.item/name', 'Test Friend');
+    await addData('vnd.android.cursor.item/phone_v2', '+91 98765 43210');
+    await addData('vnd.android.cursor.item/email_v2', 'test.friend@example.com');
+    await adb(['shell', 'pm', 'grant', PKG, 'android.permission.READ_CONTACTS']);
+    const contacts = await page.evaluate(async () => {
+      try {
+        return { ok: true, value: (await window.Capacitor.nativePromise('Contacts', 'getContacts', {})).contacts };
+      } catch (e) {
+        return { ok: false, code: e?.code ?? null, message: String(e?.message ?? e) };
+      }
+    }, null, 30_000);
+    const friend = contacts.ok ? contacts.value.find((c) => c.name === 'Test Friend') : null;
+    check(
+      !!friend && friend.phones.includes('+91 98765 43210') && friend.emails.includes('test.friend@example.com'),
+      'Contacts plugin reads the phone’s contacts (name, number, email)',
+      JSON.stringify(friend ?? contacts),
+    );
+  } catch (e) {
+    check(false, 'Contacts plugin reads the phone’s contacts (name, number, email)', e.message);
+  }
+
+  // App links: what Google sign-in and auth emails use to come back to the app.
+  await adb(['shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', "'io.github.vishnumurali.owenil://auth/callback?error_description=App%20link%20test'", PKG], { timeout: 60_000 });
+  const linked = await waitFor('the app link to open the sign-in callback', () => hasText('App link test'), 30_000).catch(() => false);
+  check(linked, 'An app link opens Owenil on the right page (sign-in callback)');
+  await screenshot('4-app-link.png');
+  await adb(['shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', "'io.github.vishnumurali.owenil://auth/callback?code=not-a-real-code'", PKG], { timeout: 60_000 });
+  const expired = await waitFor('an unusable sign-in code to be explained', () => hasText('expired or was already used'), 30_000).catch(() => false);
+  check(expired, 'A used or invalid sign-in link is explained, not ignored');
+
   check(pageErrors.length === 0, 'No uncaught errors in the app', pageErrors.slice(0, 3).join(' | '));
   page.close();
 }

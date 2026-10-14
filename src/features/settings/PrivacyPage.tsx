@@ -64,24 +64,29 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title="Privacy" description="Control who can find you and what happens to your data." />
       <Card className="divide-y divide-border">
-        <label className="flex items-center justify-between gap-4 p-5">
-          <span>
-            <span className="block text-sm font-medium">Let people find me by email</span>
-            <span className="block text-xs text-fg-muted">When on, a friend invitation sent to your email also appears inside Owenil. Inviters are never told whether an account exists.</span>
-          </span>
-          <Switch
-            checked={me.data.preferences.discoverable_by_email}
-            aria-label="Let people find me by email"
-            onCheckedChange={async (v) => {
-              const { error } = await supabase.from('user_preferences').update({ discoverable_by_email: v }).eq('user_id', user!.id);
-              if (error) toast.error(errorMessage(error));
-              else void qc.invalidateQueries({ queryKey: qk.me });
-            }}
-          />
-        </label>
+        {([
+          ['discoverable_by_email', 'Let people find me by email', 'People who already know your email can find you with “Add friend” or their phone contacts, and send you a friend request.'],
+          ['discoverable_by_phone', 'Let people find me by phone number', 'People who already have your number can find you the same way. Your number itself is never shown to anyone.'],
+        ] as const).map(([key, label, hint]) => (
+          <label key={key} className="flex items-center justify-between gap-4 p-5">
+            <span>
+              <span className="block text-sm font-medium">{label}</span>
+              <span className="block text-xs text-fg-muted">{hint}</span>
+            </span>
+            <Switch
+              checked={me.data.preferences[key]}
+              aria-label={label}
+              onCheckedChange={async (v) => {
+                const { error } = await supabase.from('user_preferences').update({ [key]: v }).eq('user_id', user!.id);
+                if (error) toast.error(errorMessage(error));
+                else void qc.invalidateQueries({ queryKey: qk.me });
+              }}
+            />
+          </label>
+        ))}
         <div className="p-5 text-sm text-fg-muted">
           <p className="font-medium text-fg">What others can see</p>
-          <p className="mt-1">Your display name and avatar colour are visible to people you share a group, friendship or expense with. Your email address is never shown to other users. If you add a UPI ID, only current friends and people in your active groups can see it. Receipts are private to the people on that expense.</p>
+          <p className="mt-1">Your display name and avatar colour are visible to people you share a group, friendship or expense with. Your email address and phone number are never shown to other users. Owenil checks your phone contacts only when you tap “Find friends from contacts”, using one-way codes, and never stores them. If you add a UPI ID, only current friends and people in your active groups can see it. Receipts are private to the people on that expense.</p>
         </div>
       </Card>
 

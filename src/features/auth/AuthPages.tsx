@@ -8,10 +8,11 @@ import { ArrowLeft, Eye, EyeOff, MailCheck, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { CURRENCIES, emailSchema, passwordSchema } from '@owenil/core';
 import { supabase } from '@/lib/supabase';
-import { appUrl } from '@/lib/env';
+import { authRedirectUrl } from '@/lib/native-auth';
 import { errorMessage, toAppError } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { safeNextPath } from '@/lib/utils';
+import { normalizePhone } from '@/data/people';
 import { useAuth } from './AuthProvider';
 import { GoogleSignIn } from './oauth';
 import { Logo } from '@/components/brand/Logo';
@@ -157,7 +158,7 @@ function ResendButton({ email, className }: { email: string; className?: string 
       loading={busy}
       onClick={async () => {
         setBusy(true);
-        const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: appUrl('auth/callback') } });
+        const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: authRedirectUrl('auth/callback') } });
         setBusy(false);
         if (error) toast.error(errorMessage(error));
         else toast.success('Verification email sent. Check your inbox.');
@@ -172,6 +173,7 @@ const registerSchema = z
   .object({
     display_name: z.string().trim().min(1, 'Enter your name').max(60),
     email: emailSchema,
+    phone: z.string().refine((v) => !!normalizePhone(v), 'Enter your mobile number, for example +91 98765 43210'),
     password: passwordSchema,
     confirm: z.string(),
     default_currency: z.string().length(3),
@@ -187,7 +189,7 @@ function RegisterForm() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { display_name: '', email: '', password: '', confirm: '', default_currency: 'INR', accept: undefined as unknown as true },
+    defaultValues: { display_name: '', email: '', phone: '', password: '', confirm: '', default_currency: 'INR', accept: undefined as unknown as true },
   });
   const onSubmit = form.handleSubmit(async (v) => {
     const next = safeNextPath(params.get('next'), '');
@@ -195,8 +197,8 @@ function RegisterForm() {
       email: v.email,
       password: v.password,
       options: {
-        data: { display_name: v.display_name, default_currency: v.default_currency, timezone: tz },
-        emailRedirectTo: appUrl(`auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`),
+        data: { display_name: v.display_name, default_currency: v.default_currency, timezone: tz, phone: normalizePhone(v.phone) },
+        emailRedirectTo: authRedirectUrl(`auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`),
       },
     });
     if (error) {
@@ -241,6 +243,9 @@ function RegisterForm() {
       </Field>
       <Field label="Email" htmlFor="email" error={err.email?.message}>
         <Input id="email" type="email" autoComplete="email" aria-invalid={!!err.email} {...form.register('email')} />
+      </Field>
+      <Field label="Mobile number" htmlFor="phone" error={err.phone?.message} hint="Friends who have your number can find you. Never shown to anyone.">
+        <Input id="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" aria-invalid={!!err.phone} {...form.register('phone')} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Password" htmlFor="password" error={err.password?.message}>
@@ -287,7 +292,7 @@ function ForgotForm() {
   useDocumentTitle('Reset password');
   const form = useForm<{ email: string }>({ resolver: zodResolver(z.object({ email: emailSchema })), defaultValues: { email: '' } });
   const onSubmit = form.handleSubmit(async (v) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(v.email, { redirectTo: appUrl('reset-password') });
+    const { error } = await supabase.auth.resetPasswordForEmail(v.email, { redirectTo: authRedirectUrl('reset-password') });
     if (error && toAppError(error).code === 'over_email_send_rate_limit') {
       form.setError('root', { message: errorMessage(error) });
       return;

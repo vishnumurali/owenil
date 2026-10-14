@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Clock, Search, UserPlus, X } from 'lucide-react';
+import { BookUser, Check, ChevronRight, Clock, Link2, Search, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatMoney } from '@owenil/core';
 import { supabase } from '@/lib/supabase';
@@ -16,8 +16,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, Skeleton } from '@/components/ui/misc';
-import { EmptyState, ErrorState, PageHeader, SectionTitle, Stagger, StaggerItem } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader, SectionTitle, Stagger, StaggerItem } from '@/components/ui/layout-bits';
+import { isAndroidApp } from '@/lib/native-upi';
 import { InviteFriendDialog } from './InviteFriendDialog';
+import { AddFriendDialog } from './AddFriendDialog';
 
 export default function FriendsPage() {
   useDocumentTitle('Friends');
@@ -27,7 +29,9 @@ export default function FriendsPage() {
   const contacts = useContacts();
   const balances = useBalanceOverview();
   const groups = useGroups();
+  const navigate = useNavigate();
   const [inviteOpen, setInviteOpen] = React.useState(false);
+  const [addOpen, setAddOpen] = React.useState(false);
   const [q, setQ] = React.useState('');
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
@@ -70,17 +74,33 @@ export default function FriendsPage() {
   const nonFriends = [...perPerson.keys()].filter((id) => !friends.data?.friendIds.includes(id));
 
   return (
-    <div>
+    <FitScreen>
       <PageHeader
         title="Friends"
         description="Share expenses one-to-one, without creating a group."
         actions={
-          <Button onClick={() => setInviteOpen(true)}>
-            <UserPlus /> Invite a friend
-          </Button>
+          <>
+            <Button onClick={() => setAddOpen(true)}>
+              <UserPlus /> Add friend
+            </Button>
+            {isAndroidApp() && (
+              <Button variant="outline" onClick={() => navigate('/friends/contacts')}>
+                <BookUser /> From contacts
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setInviteOpen(true)}>
+              <Link2 /> Invite link
+            </Button>
+          </>
         }
       />
 
+      <div className="relative mb-3 max-w-sm shrink-0">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search friends" className="pl-9" aria-label="Search friends" />
+      </div>
+
+      <FitBody>
       {friends.data && friends.data.incoming.length > 0 && (
         <section className="mb-6">
           <SectionTitle>Friend requests</SectionTitle>
@@ -106,11 +126,6 @@ export default function FriendsPage() {
           </Card>
         </section>
       )}
-
-      <div className="relative mb-4 max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search friends" className="pl-9" aria-label="Search friends" />
-      </div>
 
       {friends.isError ? (
         <ErrorState error={friends.error} onRetry={() => friends.refetch()} />
@@ -199,7 +214,9 @@ export default function FriendsPage() {
         </section>
       )}
 
+      </FitBody>
       <InviteFriendDialog open={inviteOpen} onOpenChange={setInviteOpen} />
-    </div>
+      <AddFriendDialog open={addOpen} onOpenChange={setAddOpen} />
+    </FitScreen>
   );
 }

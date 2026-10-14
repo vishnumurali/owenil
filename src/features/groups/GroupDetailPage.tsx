@@ -26,7 +26,7 @@ import { Avatar, AvatarStack } from '@/components/ui/avatar';
 import { Badge, Skeleton, Switch } from '@/components/ui/misc';
 import { Segmented } from '@/components/ui/segmented';
 import { ConfirmDialog, Dialog } from '@/components/ui/dialog';
-import { EmptyState, ErrorState, SectionTitle } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, SectionTitle } from '@/components/ui/layout-bits';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { CategoryIcon, ExpenseRow, GroupBadge, PlusGate } from '@/components/domain';
 import { ActivityList } from '@/components/activity';
@@ -90,101 +90,104 @@ export default function GroupDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <Link to="/groups" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-        <ArrowLeft className="size-4" /> Groups
-      </Link>
-      <Card className="relative overflow-hidden p-5 sm:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full opacity-25 blur-3xl" style={{ background: g.color }} />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          <GroupBadge emoji={g.emoji} color={g.color} size="lg" />
+    <FitScreen>
+      <div className="shrink-0 space-y-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon-sm" asChild className="-ml-1.5 shrink-0">
+            <Link to="/groups" aria-label="Back to groups">
+              <ArrowLeft />
+            </Link>
+          </Button>
+          <GroupBadge emoji={g.emoji} color={g.color} />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-2xl font-semibold">{g.name}</h1>
+            <div className="flex items-center gap-1.5">
+              <h1 className="truncate text-lg font-semibold leading-tight sm:text-xl">{g.name}</h1>
               {archived && <Badge tone="warning"><Archive /> Archived</Badge>}
               {g.is_demo && <Badge tone="warning">Demo</Badge>}
             </div>
-            <p className="text-sm text-fg-muted">
+            <p className="truncate text-xs text-fg-muted">
               {GROUP_TYPE_LABELS[g.group_type]} · {members.length} members · {g.default_currency}
               {g.simplify_debts && ' · simplified debts'}
             </p>
-            {g.description && <p className="mt-2 max-w-xl text-sm text-fg-muted">{g.description}</p>}
-            <div className="mt-3">
-              <AvatarStack max={6} people={members.map((m) => ({ name: contacts.data?.get(m.user_id)?.display_name ?? '?', color: contacts.data?.get(m.user_id)?.avatar_color }))} />
-            </div>
+            {g.description && <p className="truncate text-xs text-fg-subtle">{g.description}</p>}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {!archived && (
-              <Button asChild>
-                <Link to={`/expenses/new?group=${g.id}`}>
-                  <Plus /> Add expense
-                </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon-sm" aria-label="Group actions" className="shrink-0">
+                <MoreHorizontal />
               </Button>
-            )}
-            {!archived && (
-              <Button variant="outline" onClick={() => setSettle({ groupId: g.id, currency: g.default_currency })}>
-                <HandCoins /> Settle up
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Group actions">
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {!archived && (
-                  <DropdownMenuItem onSelect={() => setInviteOpen(true)}>
-                    <UserPlus /> Invite people
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem onSelect={() => navigate(`/groups/${g.id}/edit`)}>
-                    <Pencil /> Edit group
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => navigate(`/export?group=${g.id}`)}>
-                  <Download /> Export report
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {!archived && (
+                <DropdownMenuItem onSelect={() => setInviteOpen(true)}>
+                  <UserPlus /> Invite people
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {isAdmin && (
-                  <DropdownMenuItem onSelect={() => (archived ? run('set_group_archived', { p_group_id: g.id, p_archived: false }, 'Group unarchived') : setConfirm('archive'))}>
-                    {archived ? <ArchiveRestore /> : <Archive />} {archived ? 'Unarchive' : 'Archive'}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem destructive onSelect={() => setConfirm('leave')}>
-                  <LogOut /> Leave group
+              )}
+              {isAdmin && (
+                <DropdownMenuItem onSelect={() => navigate(`/groups/${g.id}/edit`)}>
+                  <Pencil /> Edit group
                 </DropdownMenuItem>
-                {myRole === 'owner' && (
-                  <DropdownMenuItem destructive onSelect={() => setConfirm('delete')}>
-                    <Trash2 /> Delete group
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              )}
+              <DropdownMenuItem onSelect={() => navigate(`/export?group=${g.id}`)}>
+                <Download /> Export report
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {isAdmin && (
+                <DropdownMenuItem onSelect={() => (archived ? run('set_group_archived', { p_group_id: g.id, p_archived: false }, 'Group unarchived') : setConfirm('archive'))}>
+                  {archived ? <ArchiveRestore /> : <Archive />} {archived ? 'Unarchive' : 'Archive'}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem destructive onSelect={() => setConfirm('leave')}>
+                <LogOut /> Leave group
+              </DropdownMenuItem>
+              {myRole === 'owner' && (
+                <DropdownMenuItem destructive onSelect={() => setConfirm('delete')}>
+                  <Trash2 /> Delete group
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="flex items-center gap-2">
+          {!archived && (
+            <Button asChild size="sm">
+              <Link to={`/expenses/new?group=${g.id}`}>
+                <Plus /> Add expense
+              </Link>
+            </Button>
+          )}
+          {!archived && (
+            <Button size="sm" variant="outline" onClick={() => setSettle({ groupId: g.id, currency: g.default_currency })}>
+              <HandCoins /> Settle up
+            </Button>
+          )}
+          <div className="ml-auto hidden min-[380px]:block">
+            <AvatarStack max={4} people={members.map((m) => ({ name: contacts.data?.get(m.user_id)?.display_name ?? '?', color: contacts.data?.get(m.user_id)?.avatar_color }))} />
           </div>
         </div>
-      </Card>
+        <Segmented<Tab>
+          value={tab}
+          onChange={setTab}
+          ariaLabel="Group sections"
+          size="sm"
+          className="w-full"
+          options={[
+            { value: 'expenses', label: 'Expenses' },
+            { value: 'balances', label: 'Balances' },
+            { value: 'members', label: 'Members' },
+            { value: 'activity', label: 'Activity' },
+            { value: 'insights', label: 'Insights' },
+          ]}
+        />
+      </div>
 
-      <Segmented<Tab>
-        value={tab}
-        onChange={setTab}
-        ariaLabel="Group sections"
-        className="w-full sm:w-auto"
-        options={[
-          { value: 'expenses', label: 'Expenses' },
-          { value: 'balances', label: 'Balances' },
-          { value: 'members', label: 'Members' },
-          { value: 'activity', label: 'Activity' },
-          { value: 'insights', label: 'Insights' },
-        ]}
-      />
-
-      {tab === 'expenses' && <GroupExpenses groupId={g.id} />}
-      {tab === 'balances' && <GroupBalances groupId={g.id} simplify={g.simplify_debts} isAdmin={isAdmin} archived={archived} onSettle={setSettle} />}
-      {tab === 'members' && <GroupMembers groupId={g.id} myRole={myRole} archived={archived} onInvite={() => setInviteOpen(true)} />}
-      {tab === 'activity' && <GroupActivity groupId={g.id} />}
-      {tab === 'insights' && <GroupInsights groupId={g.id} currency={g.default_currency} />}
+      <FitBody className="pt-3">
+        {tab === 'expenses' && <GroupExpenses groupId={g.id} />}
+        {tab === 'balances' && <GroupBalances groupId={g.id} simplify={g.simplify_debts} isAdmin={isAdmin} archived={archived} onSettle={setSettle} />}
+        {tab === 'members' && <GroupMembers groupId={g.id} myRole={myRole} archived={archived} onInvite={() => setInviteOpen(true)} />}
+        {tab === 'activity' && <GroupActivity groupId={g.id} />}
+        {tab === 'insights' && <GroupInsights groupId={g.id} currency={g.default_currency} />}
+      </FitBody>
 
       <SettleUpDialog open={!!settle} onOpenChange={(o) => !o && setSettle(null)} defaults={settle ?? {}} />
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} groupId={g.id} groupName={g.name} isAdmin={isAdmin} />
@@ -217,7 +220,7 @@ export default function GroupDetailPage() {
         loading={busy}
         onConfirm={() => run('delete_group', { p_group_id: g.id }, 'Group deleted', () => navigate('/groups'))}
       />
-    </div>
+    </FitScreen>
   );
 }
 

@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { appUrl, env, isSupabaseConfigured } from '@/lib/env';
+import { env, isSupabaseConfigured } from '@/lib/env';
 import { errorMessage } from '@/lib/errors';
+import { authRedirectUrl, openSignInPage } from '@/lib/native-auth';
+import { isAndroidApp } from '@/lib/native-upi';
 import { safeNextPath } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -43,8 +45,10 @@ function GoogleMark() {
 
 /**
  * "Continue with Google". Supabase handles the OAuth exchange (PKCE) and sends
- * the browser back to /auth/callback, which finishes sign-in. New accounts go
- * through onboarding like email sign-ups. Renders nothing while Google is off.
+ * the browser back to /auth/callback, which finishes sign-in. In the Android
+ * app, Google's page opens in a Chrome tab (Google blocks sign-in inside app
+ * web views) and returns through the app's own link. New accounts go through
+ * onboarding like email sign-ups. Renders nothing while Google is off.
  */
 export function GoogleSignIn({ next, note }: { next: string | null; note?: React.ReactNode }) {
   const enabled = useGoogleSignInEnabled();
@@ -56,10 +60,19 @@ export function GoogleSignIn({ next, note }: { next: string | null; note?: React
     setError(null);
     setBusy(true);
     const safeNext = safeNextPath(next, '');
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: appUrl(`auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`) },
-    });
+    const redirectTo = authRedirectUrl(`auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`);
+    if (isAndroidApp()) {
+      try {
+        const { data, error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
+        if (err) throw err;
+        await openSignInPage(data.url);
+      } catch (e) {
+        setError(errorMessage(e));
+      }
+      setBusy(false);
+      return;
+    }
+    const { error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     // On success the browser is already navigating to Google.
     if (err) {
       setError(errorMessage(err));

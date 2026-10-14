@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const signInWithOAuth = vi.fn(async () => ({ data: {}, error: null }));
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { signInWithOAuth } } }));
+let android = false;
+vi.mock('@/lib/native-upi', () => ({ isAndroidApp: () => android }));
+const browserOpen = vi.fn(async () => {});
+vi.mock('@capacitor/browser', () => ({ Browser: { open: browserOpen, close: vi.fn(async () => {}) } }));
 vi.mock('@/lib/env', () => ({
   env: { supabaseUrl: 'https://example-ref.supabase.co', supabaseKey: 'sb_publishable_test', basePath: '/owenil/' },
   isSupabaseConfigured: true,
@@ -25,6 +29,8 @@ function renderWithProviders(google: boolean, next: string | null) {
 afterEach(() => {
   vi.unstubAllGlobals();
   signInWithOAuth.mockClear();
+  browserOpen.mockClear();
+  android = false;
 });
 
 describe('Continue with Google', () => {
@@ -49,5 +55,18 @@ describe('Continue with Google', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Continue with Google/ }));
     await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
     expect(signInWithOAuth).toHaveBeenCalledWith({ provider: 'google', options: { redirectTo: 'https://vishnumurali.github.io/owenil/auth/callback' } });
+  });
+
+  it('in the Android app, opens Google in a Chrome tab that returns through the app link', async () => {
+    android = true;
+    const url = 'https://example-ref.supabase.co/auth/v1/authorize?provider=google';
+    signInWithOAuth.mockResolvedValueOnce({ data: { url }, error: null });
+    renderWithProviders(true, '/pay');
+    fireEvent.click(await screen.findByRole('button', { name: /Continue with Google/ }));
+    await waitFor(() => expect(browserOpen).toHaveBeenCalledWith({ url }));
+    expect(signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: { redirectTo: 'io.github.vishnumurali.owenil://auth/callback?next=%2Fpay', skipBrowserRedirect: true },
+    });
   });
 });

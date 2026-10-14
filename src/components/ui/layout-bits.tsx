@@ -20,13 +20,35 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn('mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between', className)}>
-      <div className="min-w-0 space-y-1">
+    <div className={cn('mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between', className)}>
+      <div className="min-w-0 space-y-0.5">
         {back}
-        <h1 className="truncate text-2xl font-semibold sm:text-[1.75rem]">{title}</h1>
-        {description && <p className="text-sm text-fg-muted">{description}</p>}
+        <h1 className="truncate text-[1.45rem] font-semibold leading-tight sm:text-[1.9rem]">{title}</h1>
+        {description && <p className="line-clamp-1 text-xs text-fg-muted sm:line-clamp-2 sm:text-sm">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+          {actions}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A page that fits the screen: a fixed top part and a body that scrolls on its
+ * own (lists), instead of the whole page scrolling. AppShell gives the page
+ * the full height of the visible area when its first element is a FitScreen.
+ */
+export function FitScreen({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn('fit-screen flex min-h-0 flex-1 flex-col', className)}>{children}</div>;
+}
+
+/** The scrolling part of a FitScreen; leaves room for the floating dock on phones. */
+export function FitBody({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <div className={cn('scrollbar-thin -mx-4 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-28 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:pb-8', className)}>
+      {children}
     </div>
   );
 }

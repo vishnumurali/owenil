@@ -12,7 +12,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { AnimatedMoney } from '@/components/ui/money';
 import { Skeleton } from '@/components/ui/misc';
 import { Segmented } from '@/components/ui/segmented';
-import { EmptyState, ErrorState, PageHeader, SectionTitle, Stagger, StaggerItem } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader, SectionTitle, Stagger, StaggerItem } from '@/components/ui/layout-bits';
 import { GroupBadge } from '@/components/domain';
 import { SettleUpDialog, type SettleDefaults } from './SettleUpDialog';
 
@@ -39,13 +39,14 @@ export default function BalancesPage() {
   if (balances.isError) return <ErrorState error={balances.error} onRetry={() => balances.refetch()} />;
 
   return (
-    <div>
+    <FitScreen>
       <PageHeader
         title="Balances"
         description="Who owes whom, per currency. Amounts in different currencies are never added together."
         actions={<Button variant="outline" onClick={() => setSettle({})}><HandCoins /> Record a repayment</Button>}
       />
 
+      <FitBody>
       {balances.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
       ) : totals.length === 0 ? (
@@ -143,7 +144,8 @@ export default function BalancesPage() {
           </div>
         </>
       )}
+      </FitBody>
       <SettleUpDialog open={!!settle} onOpenChange={(o) => !o && setSettle(null)} defaults={settle ?? {}} />
-    </div>
+    </FitScreen>
   );
 }

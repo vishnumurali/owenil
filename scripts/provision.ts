@@ -7,6 +7,8 @@
  *   npm run supabase:provision -- --google     turn on Google sign-in with GOOGLE_OAUTH_CLIENT_ID/SECRET from .env.local
  *   npm run supabase:provision -- --google-off turn Google sign-in off again
  *   npm run supabase:provision -- --email-confirm off|on  skip email verification while testing / require it again
+ *   npm run supabase:provision -- --smtp       send auth emails through Gmail (SMTP_USER / SMTP_PASS app password in .env.local),
+ *                                              with Owenil's email texts, then send one test email to that inbox
  *
  * Needs SUPABASE_ACCESS_TOKEN in .env.local (Dashboard → Account → Access Tokens).
  * Writes VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY
@@ -16,13 +18,41 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { env, projectRef } from './lib';
+import { adminClient, env, pgClient, projectRef, purgeProfiles } from './lib';
 
 const API = 'https://api.supabase.com/v1';
 const NAME = 'owenil-dev';
 const REGION = 'ap-south-1'; // South Asia (Mumbai)
 const SITE_URL = 'https://vishnumurali.github.io/owenil/';
-const REDIRECTS = ['https://vishnumurali.github.io/owenil/**', 'http://localhost:5173/owenil/**'];
+// The last entry is the Android app's own link (Google sign-in and auth emails started in the app).
+const REDIRECTS = ['https://vishnumurali.github.io/owenil/**', 'http://localhost:5173/owenil/**', 'io.github.vishnumurali.owenil://**'];
+
+// Auth email texts (Supabase fills in the {{ .Placeholders }}). Plain inline HTML, no images, for deliverability.
+const emailButton = (url: string, label: string) =>
+  `<p style="margin:24px 0"><a href="${url}" style="background:#0f9b76;color:#ffffff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">${label}</a></p>`;
+const emailLayout = (title: string, body: string) =>
+  `<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1f2937">` +
+  `<p style="font-size:20px;font-weight:700;margin:0 0 16px;color:#0f9b76">Owenil</p><h1 style="font-size:18px;margin:0 0 12px">${title}</h1>${body}` +
+  `<p style="font-size:12px;color:#6b7280;margin-top:32px">Owenil records shared expenses. It never moves money.</p></div>`;
+const ignoreNote = (text: string) => `<p style="font-size:13px;color:#6b7280">${text}</p>`;
+const EMAIL_TEXTS = {
+  mailer_subjects_confirmation: 'Confirm your Owenil account',
+  mailer_templates_confirmation_content: emailLayout('Confirm your email',
+    `<p>Tap the button to confirm {{ .Email }} and finish creating your Owenil account.</p>${emailButton('{{ .ConfirmationURL }}', 'Confirm my email')}${ignoreNote('If you didn’t sign up for Owenil, ignore this email.')}`),
+  mailer_subjects_recovery: 'Reset your Owenil password',
+  mailer_templates_recovery_content: emailLayout('Reset your password',
+    `<p>Someone asked to reset the password for {{ .Email }}. If it was you, tap the button to choose a new one.</p>${emailButton('{{ .ConfirmationURL }}', 'Choose a new password')}${ignoreNote('If you didn’t ask for this, ignore this email. Your password stays the same.')}`),
+  mailer_subjects_magic_link: 'Your Owenil sign-in link',
+  mailer_templates_magic_link_content: emailLayout('Sign in to Owenil', `<p>Tap the button to sign in.</p>${emailButton('{{ .ConfirmationURL }}', 'Sign in')}`),
+  mailer_subjects_email_change: 'Confirm your new email for Owenil',
+  mailer_templates_email_change_content: emailLayout('Confirm your new email',
+    `<p>Tap the button to use {{ .NewEmail }} for your Owenil account.</p>${emailButton('{{ .ConfirmationURL }}', 'Confirm new email')}`),
+  mailer_subjects_invite: 'You’re invited to Owenil',
+  mailer_templates_invite_content: emailLayout('You’re invited to Owenil', `<p>Tap the button to create your Owenil account.</p>${emailButton('{{ .ConfirmationURL }}', 'Accept the invitation')}`),
+  mailer_subjects_reauthentication: 'Your Owenil verification code',
+  mailer_templates_reauthentication_content: emailLayout('Your verification code',
+    `<p>Enter this code in Owenil:</p><p style="font-size:24px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>`),
+};
 
 async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API}${path}`, {
@@ -61,6 +91,38 @@ async function main() {
       ? '✓ Email confirmation is OFF: new accounts are signed in straight away (testing only — turn it on before launch).'
       : '✓ Email confirmation is ON: new accounts must open the verification email.');
     console.log(`  Minimum password length: ${check.password_min_length}`);
+    return;
+  }
+  if (args.includes('--smtp')) {
+    const user = env('SMTP_USER').trim();
+    const pass = env('SMTP_PASS').replace(/\s+/g, ''); // Google shows app passwords in groups of four
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(user)) throw new Error('SMTP_USER must be the full email address, e.g. owenil.app@gmail.com');
+    if (pass.length < 16) throw new Error('SMTP_PASS should be the 16-letter app password from https://myaccount.google.com/apppasswords');
+    await api('PATCH', `/projects/${projectRef()}/config/auth`, {
+      smtp_admin_email: user,
+      smtp_sender_name: process.env.SMTP_SENDER_NAME?.trim() || 'Owenil',
+      smtp_host: process.env.SMTP_HOST?.trim() || 'smtp.gmail.com',
+      smtp_port: process.env.SMTP_PORT?.trim() || '465',
+      smtp_user: user,
+      smtp_pass: pass,
+      ...EMAIL_TEXTS,
+    });
+    const check = await api<{ smtp_host?: string; smtp_admin_email?: string; rate_limit_email_sent?: number }>('GET', `/projects/${projectRef()}/config/auth`);
+    console.log(`✓ Auth emails now go through ${check.smtp_host} from ${check.smtp_admin_email} (password not shown); limit ${check.rate_limit_email_sent} per hour`);
+    // One real email proves the Gmail login works: an invitation to the sender's own inbox (plus-address),
+    // then the temporary account is removed again.
+    const testAddress = user.replace('@', '+owenil-test@');
+    const admin = adminClient();
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(testAddress);
+    if (error) throw new Error(`Gmail did not accept the test email: ${error.message}. Check SMTP_USER / SMTP_PASS (an app password, with 2-Step Verification on).`);
+    const db = await pgClient();
+    try {
+      await purgeProfiles(db, 'id = $1', [data.user.id]);
+    } finally {
+      await db.end();
+    }
+    await admin.auth.admin.deleteUser(data.user.id);
+    console.log(`✓ Test email sent through Gmail to ${testAddress} ("You’re invited to Owenil"); the temporary account was removed`);
     return;
   }
   if (args.includes('--google') || args.includes('--google-off')) {

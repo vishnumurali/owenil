@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Coins, Download, FlaskConical, Monitor, Moon, RefreshCw, Shield, Smartphone, Sun } from 'lucide-react';
+import { Check, ChevronRight, Coins, Download, FlaskConical, Monitor, Moon, Phone, RefreshCw, Shield, Smartphone, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 import { CURRENCIES, isValidUpiId, normalizeUpiId, profileFormSchema } from '@owenil/core';
 import { supabase } from '@/lib/supabase';
@@ -10,14 +10,16 @@ import { errorMessage, unwrap } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { useTheme, type ThemePreference } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { invalidateFinancial, qk, useMe, useUpiId } from '@/data/queries';
+import { invalidateFinancial, qk, useMe, useMyPhone, useUpiId } from '@/data/queries';
+import { formatPhone, normalizePhone, saveMyPhone } from '@/data/people';
 import type { Preferences } from '@/types/db';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, Input, NativeSelect } from '@/components/ui/input';
 import { Skeleton, Switch } from '@/components/ui/misc';
 import { Avatar } from '@/components/ui/avatar';
-import { PageHeader } from '@/components/ui/layout-bits';
+import { FitBody, FitScreen, PageHeader } from '@/components/ui/layout-bits';
+import { Segmented } from '@/components/ui/segmented';
 
 const AVATAR_COLORS = ['#14b8a6', '#10b981', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#64748b'];
 
@@ -29,8 +31,12 @@ function timeZones(): string[] {
   }
 }
 
+type SettingsTab = 'profile' | 'preferences' | 'more';
+
 export default function SettingsPage() {
   useDocumentTitle('Profile & preferences');
+  const location = useLocation();
+  const [tab, setTab] = React.useState<SettingsTab>(location.hash === '#notifications' ? 'preferences' : 'profile');
   const me = useMe();
   const qc = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -41,6 +47,8 @@ export default function SettingsPage() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const zones = React.useMemo(timeZones, []);
+  // Browsers may list a zone under another name (Chrome: Asia/Calcutta for Asia/Kolkata), so the saved one is always offered.
+  const zoneOptions = zones.includes(tz) ? zones : [tz, ...zones];
 
   React.useEffect(() => {
     if (me.data) {
@@ -76,13 +84,21 @@ export default function SettingsPage() {
     void setPref({ theme: t });
   };
 
+  // Links like /settings#upi or #notifications open the right tab and scroll to the card.
+  React.useEffect(() => {
+    if (location.hash && me.data) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' });
+  }, [location.hash, tab, me.data]);
+
   if (me.isLoading || !me.data) return <Skeleton className="h-96 rounded-2xl" />;
   const p = me.data.preferences;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <FitScreen className="mx-auto w-full max-w-3xl">
       <PageHeader title="Profile & preferences" description={me.data.email} />
-
+      <Segmented<SettingsTab> size="sm" value={tab} onChange={setTab} ariaLabel="Settings sections" className="mb-3 w-full shrink-0"
+        options={[{ value: 'profile', label: 'Profile' }, { value: 'preferences', label: 'Preferences' }, { value: 'more', label: 'More' }]} />
+      <FitBody className="space-y-4">
+      {tab === 'profile' && (<>
       <Card className="p-5 sm:p-6">
         <h2 className="mb-4 font-semibold">Profile</h2>
         <form onSubmit={saveProfile} className="space-y-4">
@@ -106,7 +122,7 @@ export default function SettingsPage() {
             </Field>
             <Field label="Time zone" htmlFor="s-tz" hint="Used for “today” and recurring schedules.">
               <NativeSelect id="s-tz" value={tz} onChange={(e) => setTz(e.target.value)}>
-                {zones.map((z) => <option key={z} value={z}>{z}</option>)}
+                {zoneOptions.map((z) => <option key={z} value={z}>{z}</option>)}
               </NativeSelect>
             </Field>
           </div>
@@ -115,8 +131,12 @@ export default function SettingsPage() {
         </form>
       </Card>
 
-      <UpiCard userId={me.data.profile.id} />
+      <PhoneCard />
 
+      <UpiCard userId={me.data.profile.id} />
+      </>)}
+
+      {tab === 'preferences' && (<>
       <Card className="p-5 sm:p-6">
         <h2 className="mb-4 font-semibold">Appearance</h2>
         <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Theme">
@@ -148,6 +168,9 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+      </>)}
+
+      {tab === 'more' && (<>
       <Card className="divide-y divide-border">
         {[
           { to: '/settings/currency', icon: Coins, label: 'Currency & exchange rates' },
@@ -161,7 +184,52 @@ export default function SettingsPage() {
       </Card>
 
       {env.devTools && <DevTools />}
-    </div>
+      </>)}
+      </FitBody>
+    </FitScreen>
+  );
+}
+
+/** The user's mobile number (required at sign-up; lets friends who have it find them). */
+function PhoneCard() {
+  const qc = useQueryClient();
+  const saved = useMyPhone();
+  // null = not edited, so the saved value shows (and arriving data never overwrites typing).
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const value = draft ?? (saved.data ? formatPhone(saved.data) : '');
+
+  const save = async () => {
+    setError(null);
+    const e164 = normalizePhone(value);
+    if (!e164) return setError('Enter your mobile number, for example +91 98765 43210.');
+    setBusy(true);
+    try {
+      qc.setQueryData(qk.myPhone, await saveMyPhone(e164));
+      setDraft(null);
+      toast.success('Phone number saved');
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-5 sm:p-6" id="phone">
+      <h2 className="flex items-center gap-2 font-semibold"><Phone className="size-4 text-primary" /> Mobile number</h2>
+      <p className="mt-1 text-sm text-fg-muted">
+        Friends who have your number can find you on Owenil. It’s never shown to anyone, and you can stop being found in Privacy. Numbers aren’t verified by SMS yet.
+      </p>
+      <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <Field label="Mobile number" htmlFor="s-phone" className="flex-1" hint="Include the country code; +91 is assumed if you leave it out.">
+          <Input id="s-phone" type="tel" inputMode="tel" autoComplete="tel" value={value} onChange={(e) => setDraft(e.target.value)} placeholder="+91 98765 43210" maxLength={24} />
+        </Field>
+        <Button type="submit" loading={busy} disabled={saved.isLoading}>Save number</Button>
+      </form>
+      {error && <p role="alert" className="mt-2 text-sm text-negative">{error}</p>}
+    </Card>
   );
 }
 

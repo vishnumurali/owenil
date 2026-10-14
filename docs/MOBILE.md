@@ -28,6 +28,21 @@ When you pay someone who has saved a UPI ID, in INR:
 
 This works for one expense and for the combined **Pay** tab. Browsers never show these buttons; there, the UPI link or QR code and the "Did it go through?" question are used, because websites can't receive the UPI result.
 
+## Sign-in and email links (same as the website)
+
+- **Continue with Google** opens Google's page in a Chrome tab (Google blocks sign-in inside apps' built-in browsers), then comes back to the app through its own link, `io.github.vishnumurali.owenil://auth/callback`, and finishes signing in (PKCE: the one-time code only works in the app that asked for it).
+- **Sign-up confirmation and password-reset emails** requested in the app point back to the app too (`…://auth/callback`, `…://reset-password`). Open them on the same phone. If one is opened elsewhere, the email still gets confirmed and you can sign in with your password.
+- The link is in the Supabase redirect allow-list (`npm run supabase:provision -- --auth-urls`).
+
+## Find friends from contacts (Android app only)
+
+**Friends → From contacts** (or **All → From contacts**) asks for contacts access once, then:
+- turns each phone number and email into a one-way code (SHA-256) on the phone; numbers are normalised to +91… first;
+- asks Owenil which codes belong to people who allow being found;
+- lists **On Owenil** (Add / Accept, or Add all) and **Invite** (WhatsApp, SMS or email with a private invitation link).
+
+Contacts are never uploaded or stored. The native part is `ContactsPlugin.java` (READ_CONTACTS, asked only at that moment).
+
 ## How it's built
 
 | Part | Where |
@@ -52,6 +67,8 @@ This works for one expense and for the combined **Pay** tab. Browsers never show
    - installs and opens the app;
    - checks the web app runs as the Android build;
    - calls the native UPI plugin (`canPay`; `pay` reports a missing Google Pay and refuses non-UPI links);
+   - checks the App, Browser, Upi and Contacts plugins are built in, adds a contact to the emulator and reads it back through the contacts plugin;
+   - opens the app through its own link (`…://auth/callback`) and checks it lands on the right page, and that an unusable sign-in code is explained;
    - pays through a test-only fake UPI app and checks Owenil gets that app's SUCCESS answer back and returns to the front. This is the same round trip as with Google Pay;
    - checks the sign-in page fits the screen, no link points at the phone itself and the app has no uncaught errors.
 

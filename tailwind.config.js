@@ -11,6 +11,8 @@ export default {
     extend: {
       colors: {
         bg: v('bg'),
+        canvas: v('canvas'),
+        ink: { DEFAULT: v('ink'), fg: v('ink-fg'), muted: v('ink-muted') },
         surface: v('surface'),
         elevated: v('elevated'),
         muted: v('muted'),
@@ -44,6 +46,8 @@ export default {
         card: '0 1px 2px hsl(var(--shadow) / 0.06), 0 4px 16px -4px hsl(var(--shadow) / 0.08)',
         lift: '0 2px 4px hsl(var(--shadow) / 0.06), 0 12px 32px -8px hsl(var(--shadow) / 0.18)',
         glow: '0 0 0 1px hsl(var(--primary) / 0.25), 0 8px 30px -6px hsl(var(--primary) / 0.45)',
+        tile: '0 1px 1px hsl(var(--shadow) / 0.04), 0 10px 28px -14px hsl(var(--shadow) / 0.22)',
+        dock: '0 1px 0 hsl(0 0% 100% / 0.06) inset, 0 18px 40px -12px hsl(var(--shadow) / 0.55)',
       },
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, hsl(var(--brand-1)) 0%, hsl(var(--brand-2)) 55%, hsl(var(--brand-3)) 100%)',
@@ -58,11 +62,14 @@ export default {
         // Page entrance. The resting state is fully visible, so a skipped or
         // interrupted animation can never leave a page hidden.
         'page-in': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'none' } },
+        // The quick-action fan and the launcher grid. Resting state visible, as above.
+        'pop-in': { from: { opacity: '0', transform: 'translateY(10px) scale(0.96)' }, to: { opacity: '1', transform: 'none' } },
       },
       animation: {
         shimmer: 'shimmer 1.6s infinite',
         'fade-in': 'fade-in 200ms ease-out',
         'page-in': 'page-in 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'pop-in': 'pop-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },

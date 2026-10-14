@@ -496,7 +496,7 @@ export default function ExpenseFormPage() {
                 </div>
               )}
               {formError && <p role="alert" className="mt-4 rounded-xl bg-negative-soft px-3 py-2 text-sm text-negative">{formError}</p>}
-              <Button type="submit" size="lg" className="mt-5 w-full" loading={submitting}>
+              <Button type="submit" size="lg" className="mt-5 hidden w-full lg:inline-flex" loading={submitting}>
                 {editing ? 'Save changes' : repeat ? 'Create recurring expense' : 'Add expense'}
               </Button>
               {isGroupAdmin && draft.method !== 'itemized' && (
@@ -522,6 +522,19 @@ export default function ExpenseFormPage() {
       <SaveTemplateDialog open={templateOpen} onOpenChange={setTemplateOpen} isPlus={isPlus} groupId={groupId || null}
         method={draft.method} participants={inputs.participants.filter((p) => p.included !== false).map((p) => ({ user_id: p.userId, value: p.value ?? null }))} />
       <NewCategoryDialog open={categoryOpen} onOpenChange={setCategoryOpen} onCreated={(id) => setCategoryId(id)} />
+      {/* Phones: the total and the button stay at the bottom of the screen while the form scrolls. */}
+      <div className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-border/60 bg-canvas/95 px-4 py-3 backdrop-blur safe-bottom sm:-mx-6 sm:px-6 lg:hidden">
+        {formError && <p role="alert" className="mb-2 rounded-xl bg-negative-soft px-3 py-2 text-sm text-negative">{formError}</p>}
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-2xs text-fg-muted">{description.trim() || 'New expense'}</p>
+            <p className="truncate font-display text-lg font-semibold tabular">{formatMoney(totalMinor && totalMinor > 0 ? totalMinor : 0, currency)}</p>
+          </div>
+          <Button type="submit" size="lg" loading={submitting}>
+            {editing ? 'Save changes' : repeat ? 'Create recurring expense' : 'Add expense'}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

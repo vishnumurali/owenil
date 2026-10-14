@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, Input, NativeSelect } from '@/components/ui/input';
 import { Badge, Skeleton, Switch } from '@/components/ui/misc';
-import { EmptyState, ErrorState, PageHeader } from '@/components/ui/layout-bits';
+import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader } from '@/components/ui/layout-bits';
 import { ExpenseRow, PlusBadge } from '@/components/domain';
 
 const PAGE_SIZE = 25;
@@ -101,31 +101,32 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div>
+    <FitScreen>
       <PageHeader
         title="Expenses"
         description="Search and filter everything you can see."
         actions={<Button asChild><Link to="/expenses/new"><Plus /> Add expense</Link></Button>}
       />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+      <div className="mb-3 flex shrink-0 gap-2">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
           <Input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by description" className="pl-9" aria-label="Search expenses" />
         </div>
         <div className="flex gap-2">
-          <NativeSelect value={filters.sort} onChange={(e) => update({ sort: e.target.value === 'date_desc' ? null : e.target.value })} aria-label="Sort" className="w-44">
+          <NativeSelect value={filters.sort} onChange={(e) => update({ sort: e.target.value === 'date_desc' ? null : e.target.value })} aria-label="Sort" className="w-[7.5rem] sm:w-44">
             <option value="date_desc">Newest first</option>
             <option value="date_asc">Oldest first</option>
             <option value="amount_desc">Largest first</option>
             <option value="amount_asc">Smallest first</option>
           </NativeSelect>
-          <Button variant={showFilters ? 'secondary' : 'outline'} onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters}>
-            <Filter /> Filters {activeFilterCount > 0 && <Badge tone="primary">{activeFilterCount}</Badge>}
+          <Button variant={showFilters ? 'secondary' : 'outline'} onClick={() => setShowFilters((s) => !s)} aria-expanded={showFilters} aria-label="Filters" className="px-3 sm:px-5">
+            <Filter /> <span className="hidden sm:inline">Filters</span> {activeFilterCount > 0 && <Badge tone="primary">{activeFilterCount}</Badge>}
           </Button>
         </div>
       </div>
 
+      <FitBody>
       {(saved.data?.length ?? 0) > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Bookmark className="size-4 text-fg-subtle" />
@@ -201,6 +202,7 @@ export default function ExpensesPage() {
           />
         )}
       </Card>
-    </div>
+      </FitBody>
+    </FitScreen>
   );
 }

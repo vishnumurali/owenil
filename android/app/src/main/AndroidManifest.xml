@@ -22,6 +22,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Google sign-in and auth emails started in the app come back here
+                 (io.github.vishnumurali.owenil://auth/callback, ://reset-password). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="io.github.vishnumurali.owenil" />
+            </intent-filter>
+
         </activity>
 
         <provider
@@ -53,4 +62,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Only used when you tap "Find friends from contacts" (asked at that moment). -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>

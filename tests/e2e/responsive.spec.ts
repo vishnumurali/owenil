@@ -24,22 +24,33 @@ test('dark theme toggle applies', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(!before);
 });
 
-test('bottom tab bar switches pages on a phone', async ({ page }) => {
+test('the dock, launcher and quick actions work on a phone, and screens fit it', async ({ page }) => {
   test.skip(!accounts, 'Needs Supabase settings in .env.local');
   await login(page, accounts!.carol);
-  const tabs = page.getByRole('navigation', { name: 'Primary' });
-  for (const [name, heading] of [['Groups', /Groups/], ['Balances', /Balances/], ['Home', /E2E Carol/]] as const) {
-    await tabs.getByRole('link', { name, exact: true }).click();
+  const dock = page.getByRole('navigation', { name: 'Primary' });
+  for (const [name, heading] of [['Groups', /Groups/], ['Balances', /Balances/], ['Friends', /Friends/], ['Home', /E2E Carol/]] as const) {
+    if (name === 'Balances') {
+      await dock.getByRole('button', { name: 'All', exact: true }).click();
+      await page.getByRole('navigation', { name: 'All sections' }).getByRole('link', { name, exact: true }).click();
+    } else {
+      await dock.getByRole('link', { name, exact: true }).click();
+    }
     await expect(page.locator('main h1').first()).toContainText(heading);
     await expect(pageContent(page)).toHaveCSS('opacity', '1');
     // Nothing may be wider than the phone (the page would slide sideways and taps would miss).
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    // App-like: the screen itself never scrolls; only lists inside it do.
+    expect(await page.evaluate(() => { const m = document.querySelector('main')!; return m.scrollHeight - m.clientHeight; })).toBeLessThanOrEqual(1);
   }
   for (const path of ['analytics', 'expenses', 'settings', 'pay']) {
     await page.goto(path);
     await expect(page.locator('main h1').first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
-  await tabs.getByRole('link', { name: 'Add expense' }).click();
+  await page.getByRole('button', { name: 'Quick actions' }).click();
+  await page.getByRole('navigation', { name: 'Quick actions' }).getByRole('link', { name: /^Add expense/ }).click();
   await expect(page.getByRole('heading', { name: 'Add an expense' })).toBeVisible();
+  // Task screens hide the dock and keep their button on screen.
+  await expect(dock).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Add expense' })).toBeInViewport();
 });
