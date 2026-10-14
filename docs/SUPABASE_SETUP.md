@@ -58,8 +58,8 @@ npm run db:verify      # checks tables, RLS, policies, function privileges, buck
 - Or run `npm run supabase:provision -- --auth-urls` to set both.
 
 **Authentication → Sign In / Providers → Email**
-- Keep **Confirm email** on.
-- Set the minimum password length to 8 or more.
+- **Confirm email:** on for launch. While testing it can be off, so new accounts sign in straight away and no emails are needed: `npm run supabase:provision -- --email-confirm off` (and `on` to require it again). The current project has it **off** for testing.
+- Minimum password length 8 (the same command sets it).
 
 **Email delivery (important).** Supabase's built-in email service is for testing only. It's heavily rate-limited and only delivers to addresses that belong to your Supabase organization's team. To let other testers sign up, either:
 - configure free custom SMTP under **Authentication → Emails → SMTP Settings**, for example Brevo (300 emails/day free) or Resend (3,000/month free), or

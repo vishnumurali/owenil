@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 import { adminClient, hasHostedConfig, pgClient } from '../../scripts/lib';
 import { loadAccounts, login, logout } from './helpers';
 
@@ -9,13 +10,29 @@ test.describe.configure({ mode: 'serial' });
 let groupUrl = '';
 let expenseUrl = '';
 
-test('1. registration, email verification and login', async ({ page }) => {
+test('1. registration, email verification (when required) and login', async ({ page }) => {
   const email = `register.${Date.now()}@e2e.owenil.test`;
   const password = 'E2e-pass-' + Math.random().toString(36).slice(2, 10) + '9';
+  // Is "Confirm email" on? (Public Auth settings; it is switched off while testing.)
+  const settings = (await (await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
+    headers: { apikey: process.env.VITE_SUPABASE_PUBLISHABLE_KEY! },
+  })).json()) as { mailer_autoconfirm?: boolean };
+  const verificationRequired = settings.mailer_autoconfirm !== true;
 
-  // (a) The real sign-up form reaches Supabase Auth and shows its answer. Test
-  // addresses can't receive mail, so Supabase rejects them — the form must
-  // surface that clearly rather than a generic/network error.
+  if (verificationRequired) {
+    // Never spend the project's tiny email allowance (2/hour on the built-in sender)
+    // on a test: answer the sign-up request the way Supabase does once it has sent
+    // the email. Verification itself is exercised for real below, without email.
+    await page.route('**/auth/v1/signup**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: randomUUID(), aud: 'authenticated', role: '', email, confirmation_sent_at: new Date().toISOString(), user_metadata: {}, app_metadata: {}, identities: [] }),
+      }),
+    );
+  }
+
+  // (a) The sign-up form.
   await page.goto('register');
   await page.getByLabel('Your name').fill('E2E Newcomer');
   await page.getByLabel('Email').fill(email);
@@ -23,33 +40,40 @@ test('1. registration, email verification and login', async ({ page }) => {
   await page.getByLabel('Confirm').fill(password);
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page.getByText('Check your inbox').or(page.getByText(/is invalid|not authorized|Too many emails/i))).toBeVisible();
-  await expect(page.getByText(/Can’t reach the server/)).toHaveCount(0);
 
-  // (b) Email verification: create the same pending sign-up server-side and get
-  // the genuine verification link Supabase would email (no email is sent).
-  const { data, error } = await adminClient().auth.admin.generateLink({
-    type: 'signup', email, password, options: { data: { display_name: 'E2E Newcomer' }, redirectTo: new URL('auth/callback', page.url()).toString() },
-  });
-  expect(error).toBeNull();
-  const db = await pgClient();
-  const before = await db.query<{ confirmed: boolean }>('select email_confirmed_at is not null as confirmed from auth.users where email = $1', [email]);
-  expect(before.rows[0]?.confirmed).toBe(false); // unverified accounts can't sign in yet
-  await page.goto(data.properties!.action_link); // "click" the link in the email
-  await expect.poll(async () => (await db.query<{ confirmed: boolean }>('select email_confirmed_at is not null as confirmed from auth.users where email = $1', [email])).rows[0]?.confirmed).toBe(true);
-  await db.end();
+  if (verificationRequired) {
+    await expect(page.getByText('Check your inbox')).toBeVisible();
+    await page.unroute('**/auth/v1/signup**');
+    // (b) Email verification: create the same pending sign-up server-side and get
+    // the genuine verification link Supabase would email (no email is sent).
+    const { data, error } = await adminClient().auth.admin.generateLink({
+      type: 'signup', email, password, options: { data: { display_name: 'E2E Newcomer' }, redirectTo: new URL('auth/callback', page.url()).toString() },
+    });
+    expect(error).toBeNull();
+    const db = await pgClient();
+    const before = await db.query<{ confirmed: boolean }>('select email_confirmed_at is not null as confirmed from auth.users where email = $1', [email]);
+    expect(before.rows[0]?.confirmed).toBe(false); // unverified accounts can't sign in yet
+    await page.goto(data.properties!.action_link); // "click" the link in the email
+    await expect.poll(async () => (await db.query<{ confirmed: boolean }>('select email_confirmed_at is not null as confirmed from auth.users where email = $1', [email])).rows[0]?.confirmed).toBe(true);
+    await db.end();
+    // (c) Log in with the verified account.
+    await page.goto('login');
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+  }
 
-  // (c) Log in with the verified account.
-  await page.goto('login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  // First sign-in lands on onboarding.
+  // The new account (signed in straight away when verification is off) lands on onboarding.
   await expect(page.getByText('Let’s set you up')).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: /Skip/ }).click();
   await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByRole('heading', { name: 'E2E Newcomer' })).toBeVisible();
+  await logout(page);
+
+  // (d) The chosen password works for a fresh sign-in.
+  await login(page, { email, password, name: 'E2E Newcomer', id: '' });
   await expect(page.getByRole('heading', { name: 'E2E Newcomer' })).toBeVisible();
   await logout(page);
 });

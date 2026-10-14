@@ -6,6 +6,7 @@
  *   npm run supabase:provision -- --auth-urls  only update the Auth Site URL and redirect URLs
  *   npm run supabase:provision -- --google     turn on Google sign-in with GOOGLE_OAUTH_CLIENT_ID/SECRET from .env.local
  *   npm run supabase:provision -- --google-off turn Google sign-in off again
+ *   npm run supabase:provision -- --email-confirm off|on  skip email verification while testing / require it again
  *
  * Needs SUPABASE_ACCESS_TOKEN in .env.local (Dashboard → Account → Access Tokens).
  * Writes VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY
@@ -51,6 +52,17 @@ interface ApiKey { name: string; api_key: string | null; type?: string | null }
 
 async function main() {
   const args = process.argv.slice(2);
+  if (args.includes('--email-confirm')) {
+    const mode = args[args.indexOf('--email-confirm') + 1];
+    if (mode !== 'on' && mode !== 'off') throw new Error('Use --email-confirm on or --email-confirm off');
+    await api('PATCH', `/projects/${projectRef()}/config/auth`, { mailer_autoconfirm: mode === 'off', password_min_length: 8 });
+    const check = await api<{ mailer_autoconfirm?: boolean; password_min_length?: number }>('GET', `/projects/${projectRef()}/config/auth`);
+    console.log(check.mailer_autoconfirm
+      ? '✓ Email confirmation is OFF: new accounts are signed in straight away (testing only — turn it on before launch).'
+      : '✓ Email confirmation is ON: new accounts must open the verification email.');
+    console.log(`  Minimum password length: ${check.password_min_length}`);
+    return;
+  }
   if (args.includes('--google') || args.includes('--google-off')) {
     const on = args.includes('--google');
     const config = on

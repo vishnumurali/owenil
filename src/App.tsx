@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useMe } from '@/data/queries';
 import { AppShell } from '@/components/layout/AppShell';
 import { FullPageSpinner, SetupRequired } from '@/components/layout/Splash';
+import { safeNextPath } from '@/lib/utils';
 
 const Landing = lazy(() => import('@/features/landing/LandingPage'));
 const AuthPages = lazy(() => import('@/features/auth/AuthPages'));
@@ -55,7 +56,7 @@ function PublicOnly({ children }: { children: JSX.Element }) {
   if (loading) return <FullPageSpinner />;
   if (session && !recovery && location.pathname !== '/reset-password') {
     const next = new URLSearchParams(location.search).get('next');
-    return <Navigate to={next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'} replace />;
+    return <Navigate to={safeNextPath(next)} replace />;
   }
   return children;
 }

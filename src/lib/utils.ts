@@ -55,3 +55,13 @@ export function downloadFile(filename: string, content: string, mime: string) {
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * An in-app path that is safe to go to after sign-in. Anything that could leave
+ * the site (protocol-relative "//x", backslashes that browsers read as "/",
+ * absolute URLs, control characters) falls back instead.
+ */
+export function safeNextPath(next: string | null | undefined, fallback = '/dashboard'): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\') || /[\u0000-\u001f\u007f]/.test(next)) return fallback;
+  return next;
+}

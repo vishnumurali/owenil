@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { appUrl, env, isSupabaseConfigured } from '@/lib/env';
 import { errorMessage } from '@/lib/errors';
+import { safeNextPath } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -54,7 +55,7 @@ export function GoogleSignIn({ next, note }: { next: string | null; note?: React
   const start = async () => {
     setError(null);
     setBusy(true);
-    const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+    const safeNext = safeNextPath(next, '');
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: appUrl(`auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`) },

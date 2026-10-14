@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { errorMessage } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { useTheme, type ThemePreference } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { cn, safeNextPath } from '@/lib/utils';
 import { qk, useMe } from '@/data/queries';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/button';
@@ -51,8 +51,8 @@ export default function OnboardingPage() {
     setBusy(false);
     if (error) return toast.error(errorMessage(error));
     await qc.invalidateQueries({ queryKey: qk.me });
-    const next = params.get('next');
-    navigate(next && next.startsWith('/') && !next.startsWith('//') && next !== '/onboarding' ? next : destination, { replace: true });
+    const next = safeNextPath(params.get('next'), destination);
+    navigate(next !== '/onboarding' ? next : destination, { replace: true });
   };
 
   return (

@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { appUrl } from '@/lib/env';
 import { errorMessage, toAppError } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
+import { safeNextPath } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
 import { GoogleSignIn } from './oauth';
 import { Logo } from '@/components/brand/Logo';
@@ -106,8 +107,7 @@ function LoginForm() {
       form.setError('root', { message: e.message });
       return;
     }
-    const next = params.get('next');
-    navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard', { replace: true });
+    navigate(safeNextPath(params.get('next')), { replace: true });
   });
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
@@ -190,7 +190,7 @@ function RegisterForm() {
     defaultValues: { display_name: '', email: '', password: '', confirm: '', default_currency: 'INR', accept: undefined as unknown as true },
   });
   const onSubmit = form.handleSubmit(async (v) => {
-    const next = params.get('next');
+    const next = safeNextPath(params.get('next'), '');
     const { data, error } = await supabase.auth.signUp({
       email: v.email,
       password: v.password,
@@ -385,8 +385,7 @@ function Callback() {
   const errorDesc = params.get('error_description') ?? new URLSearchParams(window.location.hash.slice(1)).get('error_description');
   React.useEffect(() => {
     if (!loading && session) {
-      const next = params.get('next');
-      navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard', { replace: true });
+      navigate(safeNextPath(params.get('next')), { replace: true });
     }
   }, [loading, session, navigate, params]);
   if (errorDesc) {
