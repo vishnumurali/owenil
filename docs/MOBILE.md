@@ -36,6 +36,7 @@ This works for one expense and for the combined **Pay** tab. Browsers never show
 | Native project | `android/` (Capacitor template). App id `io.github.vishnumurali.owenil` |
 | UPI plugin | `android/app/src/main/java/io/github/vishnumurali/owenil/UpiPlugin.java`: `canPay` and `pay` (starts the UPI intent with `startActivityForResult` and returns the app's `response`). Registered in `MainActivity`. The manifest declares `<queries>` for `upi:` links and Google Pay (Android 11+ package visibility) |
 | JS bridge | `src/lib/native-upi.ts` (`isAndroidApp`, `payWithUpiApp`, `parseUpiResponse`) and `AndroidUpiPay` in `src/features/payments/PayDialog.tsx` |
+| Test UPI app | `android/fakeupi`: a test-only app that answers every `upi://pay` request with SUCCESS, so CI can test the payment round trip without Google Pay. It's never published |
 | Icons and splash | `npm run icons` renders the launcher icons (legacy, round, adaptive layers) and splash screens from the same design as the web icon |
 | Signing | A PKCS#12 key (alias `owenil`). CI reads it from the secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`. The owner's backup is `android-signing.local.p12` and `.txt` (gitignored) |
 
@@ -47,13 +48,14 @@ This works for one expense and for the combined **Pay** tab. Browsers never show
    - typecheck, then build the web app in Android mode;
    - `cap sync`, then `gradlew assembleRelease`, signed, with version `1.0.<run number>`;
    - check the package name, SDK levels and signature with `aapt2` and `apksigner`.
-2. **emulator-test:** boots an Android 14 emulator and runs `scripts/android-smoke.mjs` (Playwright's Android driver). It:
+2. **emulator-test:** boots an Android 14 emulator and runs `scripts/android-smoke.mjs`. The script drives the app with `adb` and the WebView's DevTools connection (the one `chrome://inspect` uses), and every step has a time limit. It:
    - installs and opens the app;
    - checks the web app runs as the Android build;
    - calls the native UPI plugin (`canPay`; `pay` reports a missing Google Pay and refuses non-UPI links);
-   - checks the sign-in page fits the screen and no link points at the phone itself.
+   - pays through a test-only fake UPI app and checks Owenil gets that app's SUCCESS answer back and returns to the front. This is the same round trip as with Google Pay;
+   - checks the sign-in page fits the screen, no link points at the phone itself and the app has no uncaught errors.
 
-   Screenshots are kept as a run artifact.
+   Screenshots are kept as a run artifact. On failure, the artifact also has the screen's text and the device log.
 3. **publish:** only after the emulator test passes, replaces the `android-latest` pre-release with the new `Owenil.apk`.
 
 ### Building locally (optional)

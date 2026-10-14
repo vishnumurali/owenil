@@ -1,4 +1,6 @@
 include ':app'
+// Test-only fake UPI app for CI's emulator test; never published.
+include ':fakeupi'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 

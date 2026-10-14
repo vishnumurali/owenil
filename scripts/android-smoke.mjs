@@ -1,63 +1,264 @@
 // Smoke test for the built APK on an Android emulator (run by CI):
-//   node scripts/android-smoke.mjs path/to/Owenil.apk
-// Installs and opens the app, checks the web app runs inside it as the Android
-// build, that the native UPI plugin answers, and that pages fit the phone.
-// Screenshots are written to android-smoke/ (uploaded as a CI artifact).
-import { mkdirSync } from 'node:fs';
-import { _android as android } from '@playwright/test';
+//   node scripts/android-smoke.mjs path/to/Owenil.apk [path/to/FakeUpi.apk]
+// Installs and opens the app, then talks to its WebView over the Chrome
+// DevTools protocol (the channel chrome://inspect uses) to check that the web
+// app runs as the Android build, that the native UPI plugin works and that
+// pages fit the phone. With the test-only fake UPI app (android/fakeupi) it
+// also checks the full payment round trip: Owenil opens the UPI app with the
+// payment and reads the app's answer, as it does with Google Pay.
+// Every wait has a time limit, so a problem fails the job with diagnostics
+// instead of hanging it. Screenshots, the screen's text and the device log go
+// to android-smoke/ (uploaded as a CI artifact). Needs Node 22+ and adb.
+import { execFile } from 'node:child_process';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const PKG = 'io.github.vishnumurali.owenil';
+const FAKE_UPI = 'io.github.vishnumurali.owenil.fakeupi';
 const GPAY = 'com.google.android.apps.nbu.paisa.user';
-const apk = process.argv[2];
+const PORT = 9333;
 const OUT = 'android-smoke';
+const [apk, fakeUpiApk] = process.argv.slice(2);
+if (!apk) {
+  console.error('Usage: node scripts/android-smoke.mjs path/to/Owenil.apk [path/to/FakeUpi.apk]');
+  process.exit(2);
+}
 mkdirSync(OUT, { recursive: true });
 
+const sdk = [process.env.ANDROID_HOME, process.env.ANDROID_SDK_ROOT, process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Android', 'Sdk')]
+  .find((dir) => dir && existsSync(join(dir, 'platform-tools')));
+const ADB = sdk ? join(sdk, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb') : 'adb';
+
+const t0 = Date.now();
+const log = (msg) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1).padStart(5)}s] ${msg}`);
+let failures = 0;
 function check(ok, label, detail = '') {
-  console.log(`${ok ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`);
-  if (!ok) process.exitCode = 1;
+  log(`${ok ? '✓' : '✗'} ${label}${detail ? ` (${detail})` : ''}`);
+  if (!ok) failures++;
 }
 
-const [device] = await android.devices();
-if (!device) throw new Error('No Android device or emulator found (adb devices is empty).');
-console.log(`Device: ${device.model()} (${device.serial()})`);
-await device.installApk(apk);
-await device.shell(`am start -n ${PKG}/.MainActivity`);
+function adb(args, { timeout = 60_000, binary = false } = {}) {
+  return new Promise((resolve, reject) => {
+    execFile(ADB, args, { timeout, encoding: binary ? 'buffer' : 'utf8', maxBuffer: 64 << 20 }, (err, stdout, stderr) => {
+      if (err) reject(new Error(`adb ${args.join(' ')}: ${err.killed ? `no answer after ${timeout / 1000}s` : err.message}${stderr ? ` ${stderr}`.trimEnd() : ''}`));
+      else resolve(stdout);
+    });
+  });
+}
 
-const webview = await device.webView({ pkg: PKG }, { timeout: 90_000 });
-const page = await webview.page();
-await page.waitForSelector('text=Shared expenses', { timeout: 90_000 });
-await device.screenshot({ path: `${OUT}/1-start.png` });
-check(true, 'App opens and shows the Owenil start page');
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function waitFor(label, probe, timeout) {
+  const end = Date.now() + timeout;
+  let lastError;
+  for (;;) {
+    try {
+      const value = await probe();
+      if (value) return value;
+    } catch (e) {
+      lastError = e;
+    }
+    if (Date.now() > end) throw new Error(`Gave up after ${timeout / 1000}s waiting for ${label}${lastError ? `: ${lastError.message}` : ''}`);
+    await sleep(1000);
+  }
+}
 
-const platform = await page.evaluate(() => window.Capacitor?.getPlatform?.());
-check(platform === 'android', 'Runs as the Android build', `platform=${platform}`);
+/** Minimal Chrome DevTools protocol client for one page, with a time limit on every command. */
+async function connectDevTools(url) {
+  const ws = new WebSocket(url);
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('DevTools connection timed out')), 20_000);
+    ws.addEventListener('open', () => (clearTimeout(timer), resolve()));
+    ws.addEventListener('error', () => (clearTimeout(timer), reject(new Error('DevTools connection failed'))));
+  });
+  let nextId = 1;
+  const pending = new Map();
+  const listeners = [];
+  ws.addEventListener('message', (event) => {
+    const msg = JSON.parse(String(event.data));
+    if (!msg.id) {
+      for (const listener of listeners) listener(msg);
+      return;
+    }
+    const entry = pending.get(msg.id);
+    if (!entry) return;
+    pending.delete(msg.id);
+    if (msg.error) entry.reject(new Error(`${msg.error.message} (${msg.error.code})`));
+    else entry.resolve(msg.result);
+  });
+  ws.addEventListener('close', () => {
+    for (const entry of pending.values()) entry.reject(new Error('DevTools connection closed'));
+    pending.clear();
+  });
+  const send = (method, params = {}, timeout = 30_000) =>
+    new Promise((resolve, reject) => {
+      const id = nextId++;
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`${method} got no answer after ${timeout / 1000}s`));
+      }, timeout);
+      pending.set(id, {
+        resolve: (value) => (clearTimeout(timer), resolve(value)),
+        reject: (error) => (clearTimeout(timer), reject(error)),
+      });
+      ws.send(JSON.stringify({ id, method, params }));
+    });
+  /** Runs fn(arg) in the page and returns its (awaited, JSON) result. */
+  const evaluate = async (fn, arg = null, timeout = 30_000) => {
+    const res = await send('Runtime.evaluate', { expression: `(${fn})(${JSON.stringify(arg)})`, awaitPromise: true, returnByValue: true }, timeout);
+    if (res.exceptionDetails) throw new Error(`Page error: ${res.exceptionDetails.exception?.description ?? res.exceptionDetails.text}`);
+    return res.result.value;
+  };
+  return { send, evaluate, onEvent: (fn) => listeners.push(fn), close: () => ws.close() };
+}
 
-const call = (method, options) =>
-  page.evaluate(
-    async ([m, o]) => {
-      try {
-        return { ok: true, value: await window.Capacitor.nativePromise('Upi', m, o) };
-      } catch (e) {
-        return { ok: false, code: e?.code ?? null, message: String(e?.message ?? e) };
-      }
+async function screenshot(name) {
+  try {
+    writeFileSync(join(OUT, name), await adb(['exec-out', 'screencap', '-p'], { binary: true, timeout: 30_000 }));
+    log(`  screenshot: ${OUT}/${name}`);
+  } catch (e) {
+    log(`  could not take ${name}: ${e.message}`);
+  }
+}
+
+async function saveDiagnostics() {
+  await screenshot('failure.png');
+  try {
+    await adb(['shell', 'uiautomator', 'dump', '/data/local/tmp/window.xml'], { timeout: 30_000 });
+    const xml = await adb(['exec-out', 'cat', '/data/local/tmp/window.xml'], { timeout: 15_000 });
+    writeFileSync(join(OUT, 'screen.xml'), xml);
+    const texts = [...xml.matchAll(/(?:text|content-desc)="([^"]+)"/g)].map((m) => m[1]);
+    log(`  text on screen: ${texts.slice(0, 30).join(' | ') || '(none)'}`);
+  } catch (e) {
+    log(`  could not read the screen: ${e.message}`);
+  }
+  try {
+    const logcat = await adb(['logcat', '-d', '-v', 'time'], { timeout: 30_000 });
+    writeFileSync(join(OUT, 'logcat.txt'), logcat);
+    const lines = logcat.split('\n').filter((line) => /Capacitor|chromium|AndroidRuntime|owenil|FATAL/i.test(line));
+    log(`  app log (last 40 matching lines):\n${lines.slice(-40).join('\n')}`);
+  } catch (e) {
+    log(`  could not read the device log: ${e.message}`);
+  }
+}
+
+async function main() {
+  await adb(['wait-for-device'], { timeout: 120_000 });
+  const prop = async (name) => (await adb(['shell', 'getprop', name])).trim();
+  log(`Device: ${await prop('ro.product.model')}, Android ${await prop('ro.build.version.release')} (API ${await prop('ro.build.version.sdk')})`);
+  await waitFor('the package manager', async () => (await adb(['shell', 'pm', 'path', 'android'], { timeout: 15_000 })).includes('package:'), 120_000);
+
+  const installed = await adb(['install', '-r', apk], { timeout: 240_000 });
+  check(/Success/.test(installed), 'Owenil installs', installed.trim().split('\n').pop());
+  if (fakeUpiApk) {
+    const fake = await adb(['install', '-r', fakeUpiApk], { timeout: 240_000 });
+    check(/Success/.test(fake), 'Test-only fake UPI app installs', fake.trim().split('\n').pop());
+  }
+
+  const started = await adb(['shell', 'am', 'start', '-W', '-n', `${PKG}/.MainActivity`], { timeout: 90_000 });
+  log(`  ${started.trim().split('\n').join(' | ')}`);
+  const pid = await waitFor('the app process', async () => (await adb(['shell', 'pidof', PKG], { timeout: 10_000 })).trim().split(/\s+/)[0], 60_000);
+  const socket = `webview_devtools_remote_${pid}`;
+  await waitFor(`the WebView debugging socket @${socket}`, async () => (await adb(['shell', 'cat', '/proc/net/unix'], { timeout: 15_000 })).includes(`@${socket}`), 60_000);
+  await adb(['forward', `tcp:${PORT}`, `localabstract:${socket}`]);
+
+  const target = await waitFor(
+    'the app page in the WebView',
+    async () => {
+      const res = await fetch(`http://127.0.0.1:${PORT}/json/list`, { signal: AbortSignal.timeout(5_000) });
+      const targets = await res.json();
+      return targets.find((t) => t.type === 'page' && t.url.startsWith('https://localhost'));
     },
-    [method, options],
+    60_000,
   );
-const gpay = await call('canPay', { package: GPAY });
-check(gpay.ok && gpay.value?.available === false, 'Native UPI plugin answers (Google Pay is not on a test emulator)', JSON.stringify(gpay));
-const pay = await call('pay', { uri: 'upi://pay?pa=test@upi&pn=Test&am=1.00&cu=INR', package: GPAY });
-check(!pay.ok && pay.code === 'APP_NOT_FOUND', 'Pay with GPay explains when Google Pay is missing', JSON.stringify(pay));
-const bad = await call('pay', { uri: 'https://example.com' });
-check(!bad.ok && bad.code === 'INVALID_URI', 'Plugin refuses anything that is not a UPI payment link', JSON.stringify(bad));
+  log(`  WebView page: ${target.url}`);
+  const path = target.webSocketDebuggerUrl ? new URL(target.webSocketDebuggerUrl).pathname : `/devtools/page/${target.id}`;
+  const page = await connectDevTools(`ws://127.0.0.1:${PORT}${path}`);
+  const pageErrors = [];
+  page.onEvent((msg) => {
+    if (msg.method === 'Runtime.exceptionThrown') {
+      const d = msg.params.exceptionDetails;
+      pageErrors.push(d.exception?.description ?? d.text);
+    }
+  });
+  await page.send('Runtime.enable');
+  const hasText = (text) => page.evaluate((t) => document.body?.innerText.includes(t) ?? false, text, 10_000);
 
-// The sign-in page works inside the app and fits the phone's width.
-await page.getByRole('link', { name: /sign in/i }).first().click();
-await page.waitForSelector('text=Welcome back', { timeout: 30_000 });
-const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-check(overflow <= 1, 'Sign-in page fits the screen (no sideways scrolling)', `overflow=${overflow}px`);
-const links = await page.evaluate(() => document.querySelectorAll('a[href^="http://localhost"], a[href^="https://localhost"]').length);
-check(links === 0, 'No links point at the phone itself');
-await device.screenshot({ path: `${OUT}/2-sign-in.png` });
+  await waitFor('the start page ("Shared expenses")', () => hasText('Shared expenses'), 90_000);
+  check(true, 'App opens and shows the Owenil start page');
+  await screenshot('1-start.png');
 
-await device.close();
-console.log(process.exitCode ? 'Smoke test FAILED' : 'Smoke test passed');
+  const platform = await page.evaluate(() => window.Capacitor?.getPlatform?.() ?? null);
+  check(platform === 'android', 'Runs as the Android build', `platform=${platform}`);
+
+  // The native UPI plugin, called through the same Capacitor bridge the app uses.
+  const upi = (method, options) =>
+    page.evaluate(
+      async ([m, o]) => {
+        try {
+          return { ok: true, value: await window.Capacitor.nativePromise('Upi', m, o) };
+        } catch (e) {
+          return { ok: false, code: e?.code ?? null, message: String(e?.message ?? e) };
+        }
+      },
+      [method, options],
+      30_000,
+    );
+  const gpay = await upi('canPay', { package: GPAY });
+  check(gpay.ok && gpay.value?.available === false, 'UPI plugin answers (Google Pay is not on a test emulator)', JSON.stringify(gpay));
+  const noGpay = await upi('pay', { uri: 'upi://pay?pa=test@upi&pn=Test&am=1.00&cu=INR', package: GPAY });
+  check(!noGpay.ok && noGpay.code === 'APP_NOT_FOUND', 'Pay with GPay explains when Google Pay is missing', JSON.stringify(noGpay));
+  const notUpi = await upi('pay', { uri: 'https://example.com' });
+  check(!notUpi.ok && notUpi.code === 'INVALID_URI', 'Plugin refuses anything that is not a UPI payment link', JSON.stringify(notUpi));
+
+  if (fakeUpiApk) {
+    const visible = await upi('canPay', { package: FAKE_UPI });
+    check(visible.ok && visible.value?.available === true, 'Owenil can see an installed UPI app', JSON.stringify(visible));
+    const paid = await upi('pay', { uri: 'upi://pay?pa=test@upi&pn=Test&am=12.34&cu=INR&tn=Owenil%20test', package: FAKE_UPI });
+    check(
+      paid.ok && /Status=SUCCESS/.test(paid.value?.response ?? '') && paid.value.response.includes('txnRef=FAKE-12.34'),
+      'Pay opens the UPI app with the payment and reads its answer',
+      JSON.stringify(paid),
+    );
+    const back = await waitFor('Owenil to come back to the front', () => page.evaluate(() => document.visibilityState === 'visible'), 30_000).catch(() => false);
+    check(back, 'Owenil is back in front after paying');
+    await screenshot('2-after-pay.png');
+  }
+
+  // The sign-in page works inside the app and fits the phone's width.
+  const clicked = await page.evaluate(() => {
+    const link = [...document.querySelectorAll('a[href$="/login"]')].find((a) => a.getClientRects().length > 0);
+    link?.click();
+    return link?.textContent?.trim() ?? null;
+  });
+  check(Boolean(clicked), 'Start page shows a sign-in link', `"${clicked}"`);
+  await waitFor('the sign-in page ("Welcome back")', () => hasText('Welcome back'), 30_000);
+  const layout = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    localhostLinks: document.querySelectorAll('a[href^="http://localhost"], a[href^="https://localhost"]').length,
+  }));
+  check(layout.overflow <= 1, 'Sign-in page fits the screen (no sideways scrolling)', `width=${layout.width}px, overflow=${layout.overflow}px`);
+  check(layout.localhostLinks === 0, 'No links point at the phone itself');
+  await screenshot('3-sign-in.png');
+
+  check(pageErrors.length === 0, 'No uncaught errors in the app', pageErrors.slice(0, 3).join(' | '));
+  page.close();
+}
+
+const watchdog = setTimeout(async () => {
+  log('✗ The smoke test took longer than 10 minutes');
+  await saveDiagnostics();
+  process.exit(1);
+}, 10 * 60_000);
+
+try {
+  await main();
+} catch (e) {
+  failures++;
+  log(`✗ ${e.message}`);
+}
+if (failures) await saveDiagnostics();
+await adb(['forward', '--remove', `tcp:${PORT}`]).catch(() => {});
+clearTimeout(watchdog);
+log(failures ? `Smoke test FAILED (${failures} problem${failures === 1 ? '' : 's'})` : 'Smoke test passed');
+process.exit(failures ? 1 : 0);
