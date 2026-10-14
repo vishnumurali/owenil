@@ -34,6 +34,7 @@ export const qk = {
   savedFilters: ['saved-filters'] as const,
   devStatus: ['dev-status'] as const,
   comments: (id: string) => ['comments', id] as const,
+  upi: (userId: string) => ['upi', userId] as const,
 };
 
 /** After any financial change, everything derived from the ledger must refresh. */
@@ -95,6 +96,20 @@ export function useContacts() {
       const rows = unwrap(await supabase.rpc('get_visible_profiles')) as Contact[];
       return new Map(rows.map((r) => [r.id, r]));
     },
+  });
+}
+
+/**
+ * Someone's UPI ID, if they saved one and the caller may see it (themselves,
+ * a current friend or an active group co-member). Null otherwise.
+ */
+export function useUpiId(userId: string | null | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: qk.upi(userId ?? ''),
+    enabled: !!user && !!userId,
+    staleTime: 60_000,
+    queryFn: async () => unwrap(await supabase.rpc('get_upi_id', { p_user_id: userId })) as string | null,
   });
 }
 

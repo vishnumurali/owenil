@@ -81,7 +81,7 @@ export default function PrivacyPage() {
         </label>
         <div className="p-5 text-sm text-fg-muted">
           <p className="font-medium text-fg">What others can see</p>
-          <p className="mt-1">Your display name and avatar colour are visible to people you share a group, friendship or expense with. Your email address is never shown to other users. Receipts are private to the people on that expense.</p>
+          <p className="mt-1">Your display name and avatar colour are visible to people you share a group, friendship or expense with. Your email address is never shown to other users. If you add a UPI ID, only current friends and people in your active groups can see it. Receipts are private to the people on that expense.</p>
         </div>
       </Card>
 

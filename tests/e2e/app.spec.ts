@@ -85,12 +85,31 @@ test('3–5. expense creation, split preview and balances (₹3,000 shared by th
   await expect(page.getByText('You are owed').locator('..').locator('..')).toContainText('₹2,000.00');
 });
 
-test('6. settlement recording', async ({ page }) => {
+test('6a. a UPI ID can be saved, validated and shared with friends', async ({ page }) => {
+  await login(page, accounts!.alice);
+  await page.goto('settings');
+  await page.getByLabel('UPI ID').fill('not a upi id');
+  await page.getByRole('button', { name: 'Save UPI ID' }).click();
+  await expect(page.getByText('Enter a UPI ID like name@bank')).toBeVisible();
+  await page.getByLabel('UPI ID').fill('  E2E.Alice@OkAxis ');
+  await page.getByRole('button', { name: 'Save UPI ID' }).click();
+  await expect(page.getByText('UPI ID saved')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('UPI ID')).toHaveValue('e2e.alice@okaxis');
+  await logout(page);
+});
+
+test('6. settlement recording (with Pay with UPI)', async ({ page }) => {
   await login(page, accounts!.bob);
   await page.goto(groupUrl);
   await page.getByRole('button', { name: 'Settle up' }).click();
   await page.getByLabel('Paid to').selectOption({ label: 'E2E Alice' });
   await page.getByLabel('Amount').fill('1000');
+  // Alice shared her UPI ID: Bob gets a link for his UPI app and a QR code, amount filled in.
+  await expect(page.getByText('Pay E2E Alice with UPI')).toBeVisible();
+  const upiLink = page.getByRole('link', { name: 'Open UPI app' });
+  await expect(upiLink).toHaveAttribute('href', /^upi:\/\/pay\?pa=e2e\.alice%40okaxis&pn=E2E%20Alice&am=1000\.00&cu=INR&tn=Owenil%20-%20E2E%20Trip$/);
+  await expect(page.getByRole('img', { name: /UPI QR code to pay E2E Alice/ })).toBeVisible();
   await page.getByRole('button', { name: 'Record repayment' }).click();
   await expect(page.getByText('Repayment recorded')).toBeVisible();
   await page.goto('balances');

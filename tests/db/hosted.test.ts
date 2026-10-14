@@ -123,6 +123,17 @@ describe.skipIf(!run)('hosted Supabase: authentication, RLS and financial consis
     expect((await X.client.from('budgets').insert({ user_id: X.id, amount_minor: 100, currency: 'INR' })).error).not.toBeNull();
   });
 
+  it('UPI IDs are shared only with friends and group co-members', async () => {
+    expect((await A.client.rpc('set_upi_id', { p_upi_id: ' Hosted.Alice@OkAxis ' })).error).toBeNull();
+    expect((await A.client.from('payment_handles').select('upi_id')).data).toEqual([{ upi_id: 'hosted.alice@okaxis' }]);
+    expect((await B.client.rpc('get_upi_id', { p_user_id: A.id })).data).toBe('hosted.alice@okaxis');
+    expect((await X.client.rpc('get_upi_id', { p_user_id: A.id })).data).toBeNull();
+    expect((await X.client.from('payment_handles').select('*')).data).toEqual([]);
+    expect((await X.client.from('payment_handles').insert({ user_id: X.id, upi_id: 'x@ybl' })).error).not.toBeNull();
+    expect((await X.client.rpc('set_upi_id', { p_upi_id: 'bad id' })).error?.message).toMatch(/UPI ID like name@bank/);
+    expect((await anonClient().rpc('get_upi_id', { p_user_id: A.id })).error).not.toBeNull();
+  });
+
   it('anonymous visitors cannot read data', async () => {
     const anon = anonClient();
     const { data, error } = await anon.from('expenses').select('id');

@@ -6,6 +6,7 @@ import { convertRows, pickRate } from './analytics/fx';
 import { EXPENSE_CSV_HEADERS, expensesToCSV } from './settings/exporters';
 import { Segmented } from '@/components/ui/segmented';
 import { Money } from '@/components/ui/money';
+import { QrCode } from '@/components/ui/qr-code';
 import type { ExchangeRate, Expense } from '@/types/db';
 
 describe('split editor input parsing', () => {
@@ -88,5 +89,23 @@ describe('components', () => {
     render(<Money amountMinor={-123456} currency="INR" tone="auto" />);
     const el = screen.getByText('-₹1,234.56');
     expect(el.className).toContain('text-negative');
+  });
+});
+
+describe('UPI QR code', () => {
+  it('renders a scannable dark-on-white code locally, sized to the data', () => {
+    const uri = 'upi://pay?pa=asha.k%40okhdfcbank&pn=Asha&am=1000.00&cu=INR';
+    const { container, rerender } = render(<QrCode value={uri} label="UPI QR code" />);
+    const svg = screen.getByRole('img', { name: 'UPI QR code' });
+    const size = Number(svg.getAttribute('viewBox')!.split(' ')[2]);
+    // Version 3–5 code for this length, plus a 4-module quiet zone each side.
+    expect(size).toBeGreaterThanOrEqual(29 + 8);
+    expect(size).toBeLessThanOrEqual(37 + 8);
+    const modules = container.querySelector('path')!.getAttribute('d')!.match(/M/g)!.length;
+    expect(modules).toBeGreaterThan(200);
+    // A different amount produces a different code.
+    const before = container.querySelector('path')!.getAttribute('d');
+    rerender(<QrCode value={uri.replace('1000.00', '1000.50')} label="UPI QR code" />);
+    expect(container.querySelector('path')!.getAttribute('d')).not.toBe(before);
   });
 });

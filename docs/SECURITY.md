@@ -72,6 +72,7 @@ Client-side Zod and core-engine checks are for user experience only. The databas
   - links expire (7 days for groups, 14 for friends) and group links have a use limit
   - links can be revoked
   - email invites never reveal whether an account exists
+- **UPI IDs** live in their own table (`payment_handles`), not on the profile, because they often contain a phone number. Only the owner can read the table. Others get a UPI ID through `get_upi_id()`, which answers only for current friends and active co-members of a group: not for pending invitees, former members, ex-friends or strangers. Writes go through `set_upi_id()`, which validates and normalises the ID. Account deletion removes it, and the data export includes it.
 - **CSV exports** neutralise spreadsheet formula injection.
 - **Browser protections** (GitHub Pages can't set response headers):
   - a strict CSP in a `<meta>` tag (`script-src 'self'`; connections only to Supabase)

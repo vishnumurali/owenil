@@ -7,3 +7,4 @@ export * from './recurrence';
 export * from './analytics';
 export * from './export';
 export * from './validation';
+export * from './upi';

@@ -9,13 +9,13 @@ const TABLES = [
   'expense_revisions', 'ledger_entries', 'settlements', 'recurring_expense_templates', 'recurring_expense_occurrences',
   'categories', 'comments', 'activity_events', 'notifications', 'budgets', 'exchange_rate_snapshots',
   'subscription_entitlements', 'subscription_events', 'receipt_metadata', 'idempotency_records', 'split_templates',
-  'saved_filters', 'currencies', 'app_settings', 'rate_limit_events',
+  'saved_filters', 'currencies', 'app_settings', 'rate_limit_events', 'payment_handles',
 ];
 const CLIENT_RPCS = [
   'create_expense', 'update_expense', 'delete_expense', 'restore_expense', 'record_settlement', 'reverse_settlement',
   'get_balance_overview', 'get_group_balances', 'create_group', 'accept_group_invitation', 'create_friend_invitation',
   'accept_friend_invitation', 'create_recurring_template', 'run_due_recurring_now', 'get_my_spending', 'dev_set_plan',
-  'export_my_data', 'delete_my_account', 'get_visible_profiles',
+  'export_my_data', 'delete_my_account', 'get_visible_profiles', 'set_upi_id', 'get_upi_id',
 ];
 const INTERNAL = ['_create_expense_core', '_record_settlement_core', '_apply_expense_ledger', '_reverse_source_ledger', '_make_friends', 'generate_due_recurring_expenses', 'cleanup_ephemeral_records'];
 

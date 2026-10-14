@@ -2,6 +2,7 @@
 
 - **No payments or subscriptions.** Owenil Plus is enabled only through the development entitlement (testers mode). Prices on the Plus page are for display only.
 - **No OCR.** Receipt details and items are entered manually. Local OCR (for example `tesseract.js`, Apache-2.0) could be added later. It's free but adds about 10 MB of assets, so it was left out of the MVP.
+- **UPI payments aren't verified.** Owenil only opens the payer's UPI app with the details filled in (or shows a QR code). UPI doesn't tell Owenil whether the payment went through, so the payer records the repayment themselves. Confirmed payments would need a payment gateway with merchant KYC and fees, which doesn't fit person-to-person repayments. UPI is INR-only and apps usually cap a person-to-person payment at ₹1,00,000. Some UPI apps warn about or limit payments started from links; scanning the QR code from inside the app is the fallback.
 - **No live exchange rates.** Conversion uses only rates the user records. This is deliberate.
 - **Email delivery.** Supabase's built-in email only reaches your own team's addresses and is rate-limited. Configure free custom SMTP for other testers (see Supabase setup). Invitations are links you share yourself; Owenil doesn't send invite emails.
 - **Realtime.** Lists refresh on actions, on focus and every 60 seconds (notifications). They don't stream live changes yet; Supabase Realtime could be added.

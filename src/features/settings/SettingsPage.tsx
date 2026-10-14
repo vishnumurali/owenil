@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Coins, Download, FlaskConical, Monitor, Moon, RefreshCw, Shield, Sun } from 'lucide-react';
+import { Check, ChevronRight, Coins, Download, FlaskConical, Monitor, Moon, RefreshCw, Shield, Smartphone, Sun } from 'lucide-react';
 import { toast } from 'sonner';
-import { CURRENCIES, profileFormSchema } from '@owenil/core';
+import { CURRENCIES, isValidUpiId, normalizeUpiId, profileFormSchema } from '@owenil/core';
 import { supabase } from '@/lib/supabase';
 import { env } from '@/lib/env';
 import { errorMessage, unwrap } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { useTheme, type ThemePreference } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { invalidateFinancial, qk, useMe } from '@/data/queries';
+import { invalidateFinancial, qk, useMe, useUpiId } from '@/data/queries';
 import type { Preferences } from '@/types/db';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,6 +115,8 @@ export default function SettingsPage() {
         </form>
       </Card>
 
+      <UpiCard userId={me.data.profile.id} />
+
       <Card className="p-5 sm:p-6">
         <h2 className="mb-4 font-semibold">Appearance</h2>
         <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Theme">
@@ -160,6 +162,56 @@ export default function SettingsPage() {
 
       {env.devTools && <DevTools />}
     </div>
+  );
+}
+
+/** Optional UPI ID so friends can pay you back from their UPI app in one tap. */
+function UpiCard({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const saved = useUpiId(userId);
+  // null = not edited, so the saved value shows (and arriving data never overwrites typing).
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const value = draft ?? saved.data ?? '';
+
+  const save = async (next: string) => {
+    setError(null);
+    if (!next && !saved.data) return setError('Enter your UPI ID, for example asha.k@okhdfcbank.');
+    if (next && !isValidUpiId(next)) return setError('Enter a UPI ID like name@bank, for example asha.k@okhdfcbank.');
+    setBusy(true);
+    try {
+      const stored = unwrap(await supabase.rpc('set_upi_id', { p_upi_id: next ? normalizeUpiId(next) : '' })) as string | null;
+      qc.setQueryData(qk.upi(userId), stored);
+      setDraft(null);
+      toast.success(stored ? 'UPI ID saved' : 'UPI ID removed');
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-5 sm:p-6" id="upi">
+      <h2 className="flex items-center gap-2 font-semibold"><Smartphone className="size-4 text-primary" /> Get paid back with UPI</h2>
+      <p className="mt-1 text-sm text-fg-muted">
+        Add your UPI ID and friends can pay you from GPay, PhonePe, Paytm or any UPI app in one tap, with the amount filled in.
+        Only your friends and people in your groups can see it. Owenil never moves money.
+      </p>
+      <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(e) => { e.preventDefault(); void save(value.trim()); }}>
+        <Field label="UPI ID" htmlFor="s-upi" optional className="flex-1">
+          <Input id="s-upi" value={value} onChange={(e) => setDraft(e.target.value)} placeholder="name@bank" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={100} />
+        </Field>
+        <div className="flex gap-2">
+          {saved.data && (
+            <Button type="button" variant="outline" disabled={busy} onClick={() => void save('')}>Remove</Button>
+          )}
+          <Button type="submit" loading={busy} disabled={saved.isLoading}>Save UPI ID</Button>
+        </div>
+      </form>
+      {error && <p role="alert" className="mt-2 text-sm text-negative">{error}</p>}
+    </Card>
   );
 }
 
