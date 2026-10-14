@@ -34,7 +34,7 @@ This works for one expense and for the combined **Pay** tab. Browsers never show
 |---|---|
 | Web app, Android mode | `vite build --mode android` → `dist-android/`, base path `/`, settings in `.env.android`. Links that leave the app (invite links, email links) use `VITE_PUBLIC_URL`, the website. The page stays inside the safe area (no `viewport-fit=cover`), so the status and navigation bars never cover content |
 | Native project | `android/` (Capacitor template). App id `io.github.vishnumurali.owenil` |
-| UPI plugin | `android/app/src/main/java/io/github/vishnumurali/owenil/UpiPlugin.java`: `canPay` and `pay` (starts the UPI intent with `startActivityForResult` and returns the app's `response`). Registered in `MainActivity`. The manifest declares `<queries>` for `upi:` links and Google Pay (Android 11+ package visibility) |
+| UPI plugin | `android/app/src/main/java/io/github/vishnumurali/owenil/UpiPlugin.java`: `canPay` and `pay` (starts the UPI intent with `startActivityForResult` and returns the app's `response`). Registered in `MainActivity`. The manifest declares `<queries>` for `upi://pay` links (scheme and host, the form UPI apps register) and Google Pay, for Android 11+ package visibility |
 | JS bridge | `src/lib/native-upi.ts` (`isAndroidApp`, `payWithUpiApp`, `parseUpiResponse`) and `AndroidUpiPay` in `src/features/payments/PayDialog.tsx` |
 | Test UPI app | `android/fakeupi`: a test-only app that answers every `upi://pay` request with SUCCESS, so CI can test the payment round trip without Google Pay. It's never published |
 | Icons and splash | `npm run icons` renders the launcher icons (legacy, round, adaptive layers) and splash screens from the same design as the web icon |

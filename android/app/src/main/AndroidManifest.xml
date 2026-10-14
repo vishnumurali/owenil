@@ -35,8 +35,14 @@
         </provider>
     </application>
 
-    <!-- Apps Owenil may open for UPI payments (package visibility, Android 11+). -->
+    <!-- Apps Owenil may open for UPI payments (package visibility, Android 11+).
+         UPI apps register upi://pay (scheme and host), and a query without the
+         host doesn't match their filters, so both forms are listed. -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" android:host="pay" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
