@@ -12,6 +12,7 @@ import { appUrl } from '@/lib/env';
 import { errorMessage, toAppError } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
 import { useAuth } from './AuthProvider';
+import { GoogleSignIn } from './oauth';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/button';
 import { Field, Input, NativeSelect } from '@/components/ui/input';
@@ -114,6 +115,7 @@ function LoginForm() {
         <h1 className="text-2xl font-semibold">Welcome back</h1>
         <p className="mt-1 text-sm text-fg-muted">Sign in to see your balances.</p>
       </div>
+      <GoogleSignIn next={params.get('next')} />
       <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
         <Input id="email" type="email" autoComplete="email" autoFocus aria-invalid={!!form.formState.errors.email} {...form.register('email')} />
       </Field>
@@ -233,6 +235,7 @@ function RegisterForm() {
         <h1 className="text-2xl font-semibold">Create your account</h1>
         <p className="mt-1 text-sm text-fg-muted">Free forever for everyday splitting.</p>
       </div>
+      <GoogleSignIn next={params.get('next')} note="Owenil only records shared expenses and never transfers money." />
       <Field label="Your name" htmlFor="display_name" error={err.display_name?.message}>
         <Input id="display_name" autoComplete="name" autoFocus aria-invalid={!!err.display_name} {...form.register('display_name')} />
       </Field>
@@ -389,7 +392,7 @@ function Callback() {
   if (errorDesc) {
     return (
       <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold">We couldn’t verify that link</h1>
+        <h1 className="text-2xl font-semibold">We couldn’t sign you in</h1>
         <p className="text-sm text-fg-muted">{errorDesc}</p>
         <Button asChild>
           <Link to="/login">Go to sign in</Link>
@@ -400,8 +403,8 @@ function Callback() {
   if (!loading && !session) {
     return (
       <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold">Email confirmed?</h1>
-        <p className="text-sm text-fg-muted">If you opened the link in a different browser, sign in here to continue.</p>
+        <h1 className="text-2xl font-semibold">Almost there</h1>
+        <p className="text-sm text-fg-muted">If you opened a verification link in a different browser, or sign-in was cancelled, sign in here to continue.</p>
         <Button asChild>
           <Link to="/login">Sign in</Link>
         </Button>

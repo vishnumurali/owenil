@@ -13,7 +13,7 @@ Owenil is an expense-sharing web app for friends, couples, families, travellers 
 
 | Area | What's included |
 |---|---|
-| Accounts | Email and password sign-up with email verification, login, password reset, persistent sessions, onboarding, profile, default currency, time zone, theme (light, dark or system), data export, account deletion |
+| Accounts | Email and password sign-up with email verification, optional **Continue with Google** (free; appears once enabled in Supabase), login, password reset, persistent sessions, onboarding, profile, default currency, time zone, theme (light, dark or system), data export, account deletion |
 | Groups | Trip, home, couple, family and outing groups. Owner, admin and member roles. Secure invite links (only a hash is stored). Archive, leave, remove members, transfer ownership, activity feed, group default split |
 | Friends | Link-based invitations (optionally addressed to an email), accept or decline, no duplicate friendships, one-to-one expenses outside groups |
 | Expenses | Create, edit, duplicate, delete and restore. Multiple payers, 16 categories plus custom ones, notes, tags, search, filters, sorting, pagination, comments, full revision history |

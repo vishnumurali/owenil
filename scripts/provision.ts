@@ -4,6 +4,8 @@
  *   npm run supabase:provision                 find or create "owenil-dev" (free plan, Mumbai)
  *   npm run supabase:provision -- --ref <ref>  use an existing project instead
  *   npm run supabase:provision -- --auth-urls  only update the Auth Site URL and redirect URLs
+ *   npm run supabase:provision -- --google     turn on Google sign-in with GOOGLE_OAUTH_CLIENT_ID/SECRET from .env.local
+ *   npm run supabase:provision -- --google-off turn Google sign-in off again
  *
  * Needs SUPABASE_ACCESS_TOKEN in .env.local (Dashboard → Account → Access Tokens).
  * Writes VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY
@@ -49,6 +51,17 @@ interface ApiKey { name: string; api_key: string | null; type?: string | null }
 
 async function main() {
   const args = process.argv.slice(2);
+  if (args.includes('--google') || args.includes('--google-off')) {
+    const on = args.includes('--google');
+    const config = on
+      ? { external_google_enabled: true, external_google_client_id: env('GOOGLE_OAUTH_CLIENT_ID'), external_google_secret: env('GOOGLE_OAUTH_CLIENT_SECRET') }
+      : { external_google_enabled: false };
+    await api('PATCH', `/projects/${projectRef()}/config/auth`, config);
+    const check = await api<{ external_google_enabled?: boolean }>('GET', `/projects/${projectRef()}/config/auth`);
+    console.log(`✓ Google sign-in is ${check.external_google_enabled ? 'ON' : 'OFF'} (credentials not shown)`);
+    if (on) console.log(`  Google redirect URI to allow: https://${projectRef()}.supabase.co/auth/v1/callback`);
+    return;
+  }
   if (args.includes('--auth-urls')) {
     await api('PATCH', `/projects/${projectRef()}/config/auth`, { site_url: SITE_URL, uri_allow_list: REDIRECTS.join(',') });
     console.log(`✓ Auth Site URL = ${SITE_URL}; redirect URLs = ${REDIRECTS.join(', ')}`);

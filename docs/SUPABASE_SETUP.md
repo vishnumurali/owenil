@@ -66,14 +66,30 @@ npm run db:verify      # checks tables, RLS, policies, function privileges, buck
 - invite testers to your Supabase organization, or
 - create test accounts with `npm run db:seed`, which uses pre-confirmed demo users.
 
-## 5. Optional: demo data and testers
+## 5. Optional: Google sign-in (free)
+
+Google charges nothing for sign-in and Supabase includes it on the Free plan. People who use Google skip the verification email, which also avoids the built-in email limits.
+
+1. In Google Cloud Console, create a project, then go to **Google Auth Platform**.
+   - **Branding:** app name `Owenil`. Home page `https://vishnumurali.github.io/owenil/`. Authorized domains `vishnumurali.github.io` and `<ref>.supabase.co`.
+   - **Data access:** the scopes `openid`, `userinfo.email` and `userinfo.profile`. These don't need Google review.
+   - **Audience:** **External**, then **Publish app**. Without publishing, only listed test users can sign in.
+2. Under **Clients**, choose **Create client** → **Web application**.
+   - **Authorized JavaScript origins:** `https://vishnumurali.github.io` and `http://localhost:5173`
+   - **Authorized redirect URIs:** `https://<ref>.supabase.co/auth/v1/callback`
+3. Put the client ID and secret in `.env.local` as `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`.
+4. Run `npm run supabase:provision -- --google`. This stores them in Supabase Auth and turns the provider on; `-- --google-off` turns it off.
+
+The **Continue with Google** button appears on the sign-in and sign-up pages as soon as the provider is on. No rebuild is needed, because the app asks Supabase which providers are enabled. A Google account with the same verified email as an existing Owenil account is linked to it automatically.
+
+## 6. Optional: demo data and testers
 
 ```bash
 npm run db:seed                         # fictional demo data; logins in demo-credentials.local.json
 npm run db:tester -- you@example.com    # let your own account use the development Plus switch
 ```
 
-## 6. Receipts storage
+## 7. Receipts storage
 
 The migration creates the private `receipts` bucket (5 MB limit; images and PDF) with RLS policies. If the bucket is missing, expenses still work without images, and the app explains why an upload failed.
 
