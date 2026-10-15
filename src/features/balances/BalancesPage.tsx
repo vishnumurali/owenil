@@ -137,7 +137,7 @@ export default function BalancesPage() {
               <Sparkles className="mt-0.5 size-4 shrink-0" />
               <p><strong>Debt simplification</strong> suggests the fewest repayments inside a group. It never changes how much anyone is owed in total — it just routes money more directly.</p>
             </div>
-            <div className="flex gap-3 rounded-2xl bg-muted p-4 text-sm text-fg-muted">
+            <div className="flex gap-3 rounded-2xl bg-fg/[0.06] p-4 text-sm text-fg-muted">
               <Info className="mt-0.5 size-4 shrink-0" />
               <p>Suggestions are not payments. Pay through your bank or UPI app, then record the repayment here so everyone’s balance updates.</p>
             </div>

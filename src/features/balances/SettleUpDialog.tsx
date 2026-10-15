@@ -162,7 +162,7 @@ function SettleForm({ defaults, onDone }: { defaults: SettleDefaults; onDone: ()
       </div>
 
       {other && (
-        <div className="flex items-center gap-3 rounded-xl bg-muted/60 p-3 text-sm">
+        <div className="flex items-center gap-3 rounded-xl bg-fg/[0.04] p-3 text-sm">
           <Avatar name={contacts.data?.get(payerId)?.display_name ?? 'You'} color={contacts.data?.get(payerId)?.avatar_color} size="sm" />
           <span className="flex-1">
             <strong>{name(payerId)}</strong> paid <strong>{name(payeeId || other)}</strong>

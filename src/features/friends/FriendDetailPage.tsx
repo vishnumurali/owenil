@@ -142,7 +142,7 @@ export default function FriendDetailPage() {
               const theyOwe = e.toId === me;
               return (
                 <div key={i} className="flex flex-wrap items-center gap-3 p-4">
-                  {g ? <GroupBadge emoji={g.emoji} color={g.color} size="sm" /> : <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs">1:1</span>}
+                  {g ? <GroupBadge emoji={g.emoji} color={g.color} size="sm" /> : <span className="flex size-8 items-center justify-center rounded-lg bg-fg/[0.06] text-xs">1:1</span>}
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="font-medium">{g ? g.name : 'Non-group expenses'}</p>
                     <p className={theyOwe ? 'text-positive' : 'text-negative'}>

@@ -3,8 +3,8 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BarChart3, Bell, BookUser, CalendarClock, CircleHelp, Coins, Download, HandCoins, Home, IndianRupee, LayoutGrid, LogOut, Monitor,
-  Moon, PiggyBank, Plus, Receipt, Scale, Search, Settings, Shield, Sparkles, Sun, UserPlus, Users, X, type LucideIcon,
+  BarChart3, Bell, BookUser, CalendarClock, ChevronRight, CircleHelp, Coins, Download, HandCoins, Home, IndianRupee, LayoutGrid, LogOut,
+  Monitor, Moon, PiggyBank, Plus, Receipt, Scale, Search, Settings, Shield, Sparkles, Sun, UserPlus, Users, X, type LucideIcon,
 } from 'lucide-react';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,6 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useMe, useNotifications } from '@/data/queries';
 import { Logo } from '@/components/brand/Logo';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/misc';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -47,10 +46,18 @@ const RAIL: Dest[] = [
   { to: '/pay', label: 'Pay', icon: IndianRupee },
 ];
 
-/** Every section, as tiles in the launcher. */
-const LAUNCHER: { title: string; items: Dest[] }[] = [
+/** Gradient "app icon" chips, one hue family per launcher section. */
+const CHIP = {
+  money: 'bg-[linear-gradient(135deg,hsl(var(--aurora-1)),hsl(var(--primary-2)))] text-white',
+  people: 'bg-[linear-gradient(135deg,hsl(var(--aurora-2)),hsl(var(--accent)))] text-white',
+  you: 'bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(330_80%_62%))] text-white',
+};
+
+/** Every section, as app-icon tiles in the launcher. */
+const LAUNCHER: { title: string; chip: string; items: Dest[] }[] = [
   {
     title: 'Money',
+    chip: CHIP.money,
     items: [
       { to: '/expenses', label: 'Expenses', icon: Receipt },
       { to: '/balances', label: 'Balances', icon: Scale },
@@ -63,6 +70,7 @@ const LAUNCHER: { title: string; items: Dest[] }[] = [
   },
   {
     title: 'People',
+    chip: CHIP.people,
     items: [
       { to: '/dashboard', label: 'Home', icon: Home },
       { to: '/groups', label: 'Groups', icon: LayoutGrid },
@@ -72,6 +80,7 @@ const LAUNCHER: { title: string; items: Dest[] }[] = [
   },
   {
     title: 'You',
+    chip: CHIP.you,
     items: [
       { to: '/settings', label: 'Profile', icon: Settings },
       { to: '/plus', label: 'Owenil Plus', icon: Sparkles },
@@ -99,11 +108,12 @@ function ThemeSync() {
 type Sheet = null | 'launcher' | 'actions' | 'settle' | 'add-friend';
 
 /**
- * The signed-in app. The screen never scrolls as a whole: a slim top bar, the
- * page area (which scrolls only when a page is taller than the screen; pages
- * built as a FitScreen keep their own lists scrolling inside), and floating
- * controls: on phones a dock (Home, Groups, Friends, All) with the "+" orb for
- * quick actions; on desktop a rail with the same.
+ * The signed-in app, on the aurora background. The screen never scrolls as a
+ * whole: a slim top bar, the page area (which scrolls only when a page is
+ * taller than the screen; pages built as a FitScreen keep their own lists
+ * scrolling inside), and floating glass controls: on phones a dock (Home,
+ * Groups, Friends, All) with the "+" orb for quick actions; on desktop a rail
+ * with the same.
  */
 export function AppShell() {
   const location = useLocation();
@@ -135,7 +145,7 @@ export function AppShell() {
   }, [location.pathname]);
 
   return (
-    <div className="safe-top flex h-dvh overflow-hidden bg-canvas">
+    <div className="aurora safe-top flex h-dvh overflow-hidden">
       <ThemeSync />
       <a href="#main" className="sr-only z-50 rounded-full bg-primary px-4 py-2 text-primary-fg focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
@@ -148,7 +158,7 @@ export function AppShell() {
               JavaScript-held opacity, so navigation can never get stuck invisible. */}
           <div
             key={location.pathname}
-            className={cn('page-frame mx-auto flex min-h-full w-full max-w-6xl animate-page-in flex-col px-4 pt-3 sm:px-6 lg:px-10 lg:pb-10 lg:pt-6', task ? 'pb-0' : 'pb-[calc(7rem_+_env(safe-area-inset-bottom))]')}
+            className={cn('page-frame mx-auto flex min-h-full w-full max-w-6xl animate-page-in flex-col px-4 pt-2 sm:px-6 lg:px-8 lg:pb-10 lg:pt-4', task ? 'pb-0' : 'pb-[calc(7rem_+_env(safe-area-inset-bottom))]')}
           >
             <RouteErrorBoundary>
               <React.Suspense fallback={<PageSkeleton />}>
@@ -172,9 +182,9 @@ export function AppShell() {
 function PageSkeleton() {
   return (
     <div className="space-y-4" aria-hidden>
-      <div className="h-8 w-48 animate-pulse rounded-full bg-surface" />
-      <div className="h-40 animate-pulse rounded-2xl bg-surface" />
-      <div className="h-64 animate-pulse rounded-2xl bg-surface" />
+      <div className="h-9 w-52 animate-pulse rounded-full bg-fg/[0.06]" />
+      <div className="h-44 animate-pulse rounded-[28px] bg-fg/[0.06]" />
+      <div className="h-64 animate-pulse rounded-[22px] bg-fg/[0.06]" />
     </div>
   );
 }
@@ -183,30 +193,35 @@ function PageSkeleton() {
 
 function Rail({ onLauncher, onActions }: { onLauncher: () => void; onActions: () => void }) {
   return (
-    <aside className="hidden w-[92px] shrink-0 flex-col items-center gap-3 py-4 lg:flex">
-      <Link to="/dashboard" aria-label="Owenil home" className="flex size-11 items-center justify-center">
-        <Logo compact />
-      </Link>
-      <button
-        type="button"
-        onClick={onActions}
-        aria-label="Quick actions"
-        className="flex size-12 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
-      >
-        <Plus className="size-6" strokeWidth={2.5} />
-      </button>
-      <nav aria-label="Main" className="scrollbar-thin flex w-full flex-1 flex-col items-center gap-1 overflow-y-auto px-2 py-2">
-        {RAIL.map((d) => (
-          <RailLink key={d.to} {...d} />
-        ))}
-      </nav>
-      <button
-        type="button"
-        onClick={onLauncher}
-        className="flex w-[76px] flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-medium text-fg-muted transition-colors hover:bg-surface hover:text-fg"
-      >
-        <LayoutGrid className="size-5" /> All
-      </button>
+    <aside className="hidden w-[104px] shrink-0 p-3 pr-0 lg:flex">
+      <div className="glass flex w-full flex-col items-center gap-3 rounded-[30px] py-4">
+        <Link to="/dashboard" aria-label="Owenil home" className="flex size-11 items-center justify-center">
+          <Logo compact />
+        </Link>
+        <button
+          type="button"
+          onClick={onActions}
+          aria-label="Quick actions"
+          className="bg-orb-gradient flex size-12 items-center justify-center rounded-[18px] text-white shadow-glow-accent transition-transform hover:scale-105 active:scale-95"
+        >
+          <Plus className="size-6" strokeWidth={2.5} />
+        </button>
+        <nav aria-label="Main" className="scrollbar-none flex w-full flex-1 flex-col items-center gap-1 overflow-y-auto px-2 py-1">
+          {RAIL.map((d) => (
+            <RailLink key={d.to} {...d} />
+          ))}
+        </nav>
+        <button
+          type="button"
+          onClick={onLauncher}
+          className="group flex w-[76px] flex-col items-center gap-1 rounded-2xl py-1.5 text-[11px] font-semibold text-fg-muted transition-colors hover:text-fg"
+        >
+          <span className="flex size-10 items-center justify-center rounded-[14px] transition-colors group-hover:bg-fg/[0.06]">
+            <LayoutGrid className="size-[18px]" />
+          </span>
+          All
+        </button>
+      </div>
     </aside>
   );
 }
@@ -216,15 +231,12 @@ function RailLink({ to, label, icon: Icon }: Dest) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        cn(
-          'group flex w-[76px] flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-medium transition-colors',
-          isActive ? 'text-fg' : 'text-fg-muted hover:text-fg',
-        )
+        cn('group flex w-[76px] flex-col items-center gap-1 rounded-2xl py-1.5 text-[11px] font-semibold transition-colors', isActive ? 'text-fg' : 'text-fg-muted hover:text-fg')
       }
     >
       {({ isActive }) => (
         <>
-          <span className={cn('flex h-8 w-14 items-center justify-center rounded-full transition-colors', isActive ? 'bg-ink text-ink-fg' : 'group-hover:bg-surface')}>
+          <span className={cn('flex size-10 items-center justify-center rounded-[14px] transition-all', isActive ? 'bg-primary-gradient text-primary-fg shadow-glow' : 'group-hover:bg-fg/[0.06]')}>
             <Icon className="size-[18px]" />
           </span>
           {label}
@@ -240,19 +252,19 @@ function Dock({ onLauncher, launcherOpen }: { onLauncher: () => void; launcherOp
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] left-3 z-30 flex items-center gap-1 rounded-full bg-ink p-1.5 text-ink-muted shadow-dock lg:hidden"
+      className="glass fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] left-3 z-30 flex items-center gap-0.5 rounded-full bg-surface/95 p-1.5 text-fg-muted backdrop-blur-2xl dark:bg-[hsl(var(--glass)/0.95)] lg:hidden"
     >
       {DOCK.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
           className={({ isActive }) =>
-            cn('relative flex h-12 w-[62px] flex-col items-center justify-center gap-0.5 rounded-full text-[10.5px] font-medium transition-colors', isActive ? 'text-ink' : 'hover:text-ink-fg')
+            cn('relative flex h-[52px] w-[62px] flex-col items-center justify-center gap-0.5 rounded-full text-[10.5px] font-semibold transition-colors', isActive ? 'text-primary-fg' : 'hover:text-fg')
           }
         >
           {({ isActive }) => (
             <>
-              {isActive && <motion.span layoutId="dock-active" className="absolute inset-0 rounded-full bg-ink-fg" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
+              {isActive && <motion.span layoutId="dock-active" className="bg-primary-gradient absolute inset-0 rounded-full shadow-glow" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
               <Icon className="relative size-[19px]" />
               <span className="relative">{label}</span>
             </>
@@ -263,7 +275,7 @@ function Dock({ onLauncher, launcherOpen }: { onLauncher: () => void; launcherOp
         type="button"
         onClick={onLauncher}
         aria-expanded={launcherOpen}
-        className="flex h-12 w-[62px] flex-col items-center justify-center gap-0.5 rounded-full text-[10.5px] font-medium transition-colors hover:text-ink-fg"
+        className="flex h-[52px] w-[62px] flex-col items-center justify-center gap-0.5 rounded-full text-[10.5px] font-semibold transition-colors hover:text-fg"
       >
         <LayoutGrid className="size-[19px]" />
         All
@@ -276,41 +288,45 @@ function Dock({ onLauncher, launcherOpen }: { onLauncher: () => void; launcherOp
 
 function ActionOrb({ open, onOpenChange, onPick, hideTrigger }: { open: boolean; onOpenChange: (o: boolean) => void; onPick: (s: Sheet) => void; hideTrigger?: boolean }) {
   const actions: { label: string; hint: string; icon: LucideIcon; tone: string; to?: string; sheet?: Sheet }[] = [
-    { label: 'Add expense', hint: 'Split a bill', icon: Receipt, tone: 'bg-primary text-primary-fg', to: '/expenses/new' },
-    { label: 'Pay with UPI', hint: 'Everything you owe, per person', icon: IndianRupee, tone: 'bg-accent text-white', to: '/pay' },
-    { label: 'Record repayment', hint: 'Cash or bank transfer', icon: HandCoins, tone: 'bg-positive text-white', sheet: 'settle' },
-    { label: 'Add friend', hint: 'By email or phone number', icon: UserPlus, tone: 'bg-plus text-white', sheet: 'add-friend' },
-    { label: 'New group', hint: 'Trip, flat, family…', icon: LayoutGrid, tone: 'bg-warning text-white', to: '/groups/new' },
+    { label: 'Add expense', hint: 'Split a bill', icon: Receipt, tone: 'bg-primary-gradient text-primary-fg', to: '/expenses/new' },
+    { label: 'Pay with UPI', hint: 'Everything you owe, per person', icon: IndianRupee, tone: CHIP.people, to: '/pay' },
+    { label: 'Record repayment', hint: 'Cash or bank transfer', icon: HandCoins, tone: CHIP.money, sheet: 'settle' },
+    { label: 'Add friend', hint: 'By email or phone number', icon: UserPlus, tone: CHIP.you, sheet: 'add-friend' },
+    { label: 'New group', hint: 'Trip, flat, family…', icon: LayoutGrid, tone: 'bg-[linear-gradient(135deg,hsl(38_95%_58%),hsl(18_90%_58%))] text-white', to: '/groups/new' },
   ];
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Trigger
         aria-label="Quick actions"
-        className={cn('fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-30 flex size-[60px] items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-transform active:scale-95 lg:hidden', hideTrigger && 'hidden')}
+        className={cn(
+          'bg-orb-gradient fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-30 flex size-[62px] items-center justify-center rounded-full text-white shadow-glow-accent ring-4 ring-white/40 transition-transform active:scale-95 dark:ring-white/10 lg:hidden',
+          hideTrigger && 'hidden',
+        )}
       >
         <Plus className="size-7" strokeWidth={2.5} />
       </DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(226_45%_4%/0.5)] backdrop-blur-sm" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(232_40%_4%/0.45)] backdrop-blur-md" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-end gap-2 focus:outline-none lg:bottom-auto lg:left-[104px] lg:right-auto lg:top-20 lg:items-start"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-50 flex w-[min(20.5rem,calc(100vw-1.5rem))] flex-col items-end gap-2 focus:outline-none lg:bottom-auto lg:left-[116px] lg:right-auto lg:top-20 lg:items-start"
         >
           <DialogPrimitive.Title className="sr-only">Quick actions</DialogPrimitive.Title>
           <nav aria-label="Quick actions" className="flex w-full flex-col gap-2">
             {actions.map((a, i) => {
               const body = (
                 <>
-                  <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', a.tone)}>
-                    <a.icon className="size-[18px]" />
+                  <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-full shadow-sm', a.tone)}>
+                    <a.icon className="size-[19px]" />
                   </span>
-                  <span className="min-w-0 text-left">
-                    <span className="block text-sm font-semibold text-fg">{a.label}</span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block text-[15px] font-semibold tracking-tight text-fg">{a.label}</span>
                     <span className="block truncate text-xs text-fg-muted">{a.hint}</span>
                   </span>
+                  <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
                 </>
               );
-              const cls = 'flex w-full animate-pop-in items-center gap-3 rounded-full bg-surface p-1.5 pr-5 shadow-lift ring-1 ring-border/60 transition-transform active:scale-[0.98]';
+              const cls = 'glass flex w-full animate-pop-in items-center gap-3 rounded-full p-1.5 pr-4 transition-transform active:scale-[0.98]';
               const style = { animationDelay: `${(actions.length - i) * 35}ms` };
               return a.to ? (
                 <Link key={a.label} to={a.to} className={cls} style={style} onClick={() => onOpenChange(false)}>
@@ -325,7 +341,7 @@ function ActionOrb({ open, onOpenChange, onPick, hideTrigger }: { open: boolean;
           </nav>
           <DialogPrimitive.Close
             aria-label="Close quick actions"
-            className="flex size-[60px] items-center justify-center self-end rounded-full bg-ink text-ink-fg shadow-dock lg:hidden"
+            className="glass flex size-[62px] items-center justify-center self-end rounded-full text-fg lg:hidden"
           >
             <X className="size-7" />
           </DialogPrimitive.Close>
@@ -347,25 +363,25 @@ function Launcher({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boo
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(226_45%_4%/0.55)] backdrop-blur-sm" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(232_40%_4%/0.45)] backdrop-blur-md" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="scrollbar-thin fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)_+_0.5rem)] top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex animate-pop-in flex-col overflow-y-auto rounded-[28px] bg-canvas p-4 shadow-lift focus:outline-none sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[86dvh] sm:w-[34rem] sm:-translate-x-1/2 sm:-translate-y-1/2"
+          className="aurora scrollbar-thin fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)_+_0.5rem)] top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex animate-pop-in flex-col overflow-y-auto rounded-[32px] p-4 shadow-lift ring-1 ring-white/50 focus:outline-none dark:ring-white/10 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86dvh] sm:w-[36rem] sm:-translate-x-1/2 sm:-translate-y-1/2"
         >
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             {me.data && <Avatar name={me.data.profile.display_name} color={me.data.profile.avatar_color} url={me.data.profile.avatar_url} />}
             <div className="min-w-0 flex-1">
-              <DialogPrimitive.Title className="truncate font-display text-lg font-semibold">{me.data?.profile.display_name ?? 'Owenil'}</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="truncate font-display text-xl font-semibold tracking-tight">{me.data?.profile.display_name ?? 'Owenil'}</DialogPrimitive.Title>
               <p className="truncate text-xs text-fg-muted">{me.data?.email}</p>
             </div>
-            <DialogPrimitive.Close aria-label="Close" className="flex size-10 items-center justify-center rounded-full bg-surface text-fg-muted shadow-tile">
+            <DialogPrimitive.Close aria-label="Close" className="glass flex size-10 items-center justify-center rounded-full text-fg-muted">
               <X className="size-5" />
             </DialogPrimitive.Close>
           </div>
-          <nav aria-label="All sections" className="space-y-4">
+          <nav aria-label="All sections" className="space-y-5">
             {sections.map((s) => (
               <section key={s.title}>
-                <h2 className="mb-2 px-1 text-2xs font-semibold uppercase tracking-wider text-fg-subtle">{s.title}</h2>
+                <h2 className="mb-2 px-1 text-[13px] font-semibold text-fg-muted">{s.title}</h2>
                 <div className="grid grid-cols-4 gap-2">
                   {s.items.map(({ to, label, icon: Icon }) => (
                     <NavLink
@@ -375,12 +391,14 @@ function Launcher({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boo
                       onClick={() => onOpenChange(false)}
                       className={({ isActive }) =>
                         cn(
-                          'flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[20px] p-1 text-center text-[11px] font-medium leading-tight shadow-tile ring-1 transition-transform active:scale-95',
-                          isActive ? 'bg-ink text-ink-fg ring-ink' : 'bg-surface text-fg ring-border/60',
+                          'tile flex aspect-square flex-col items-center justify-center gap-2 rounded-[22px] p-1 text-center text-[11px] font-semibold leading-tight transition-transform active:scale-95',
+                          isActive && 'ring-2 ring-primary',
                         )
                       }
                     >
-                      <Icon className="size-5" />
+                      <span className={cn('flex size-10 items-center justify-center rounded-[14px] shadow-sm', s.chip)}>
+                        <Icon className="size-[18px]" />
+                      </span>
                       {label}
                     </NavLink>
                   ))}
@@ -388,25 +406,25 @@ function Launcher({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boo
               </section>
             ))}
           </nav>
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 space-y-2">
             <ThemeSwitch />
             {me.data && !me.data.isPlus && (
-              <Link to="/plus" onClick={() => onOpenChange(false)} className="block rounded-2xl bg-gradient-to-br from-plus/15 to-accent/10 p-3">
+              <Link to="/plus" onClick={() => onOpenChange(false)} className="tile block rounded-[22px] p-4">
                 <p className="flex items-center gap-1.5 text-sm font-semibold"><Sparkles className="size-4 text-plus" /> Owenil Plus</p>
                 <p className="mt-0.5 text-xs text-fg-muted">Budgets, receipts, exports and deeper insights.</p>
               </Link>
             )}
-            <Button
-              variant="ghost"
-              className="w-full text-negative hover:bg-negative-soft hover:text-negative"
+            <button
+              type="button"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold text-negative transition-colors hover:bg-negative-soft"
               onClick={async () => {
                 onOpenChange(false);
                 await signOut();
                 navigate('/login');
               }}
             >
-              <LogOut /> Sign out
-            </Button>
+              <LogOut className="size-4" /> Sign out
+            </button>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
@@ -422,14 +440,17 @@ function ThemeSwitch() {
     { v: 'system' as const, label: 'System', icon: Monitor },
   ];
   return (
-    <div className="grid grid-cols-3 gap-1 rounded-full bg-surface p-1 shadow-tile ring-1 ring-border/60" role="radiogroup" aria-label="Theme">
+    <div className="grid grid-cols-3 gap-1 rounded-full bg-fg/[0.06] p-1" role="radiogroup" aria-label="Theme">
       {opts.map((o) => (
         <button
           key={o.v}
           role="radio"
           aria-checked={theme === o.v}
           onClick={() => setTheme(o.v)}
-          className={cn('flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-medium transition-colors', theme === o.v ? 'bg-ink text-ink-fg' : 'text-fg-muted hover:text-fg')}
+          className={cn(
+            'flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold transition-all',
+            theme === o.v ? 'bg-surface text-fg shadow-[0_1px_2px_hsl(var(--shadow)/0.12),0_6px_16px_-6px_hsl(var(--shadow)/0.35)] dark:bg-white/[0.14]' : 'text-fg-muted hover:text-fg',
+          )}
         >
           <o.icon className="size-4" />
           {o.label}
@@ -440,6 +461,8 @@ function ThemeSwitch() {
 }
 
 /* ------------------------------------------------------------- Top bar ---- */
+
+const roundGlass = 'glass flex size-10 items-center justify-center rounded-full text-fg-muted transition-colors hover:text-fg';
 
 function TopBar() {
   const me = useMe();
@@ -452,7 +475,7 @@ function TopBar() {
 
   return (
     <header className="z-20 shrink-0">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:h-16 lg:px-10">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link to="/dashboard" className="lg:hidden" aria-label="Owenil home">
           <Logo />
         </Link>
@@ -464,26 +487,25 @@ function TopBar() {
             navigate(`/expenses?search=${encodeURIComponent(q)}`);
           }}
         >
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search expenses…"
             aria-label="Search expenses"
-            className="h-10 w-full rounded-full bg-surface pl-10 pr-10 text-sm shadow-tile ring-1 ring-border/60 placeholder:text-fg-subtle focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0"
+            className="glass h-11 w-full rounded-full pl-11 pr-10 text-sm placeholder:text-fg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0"
           />
-          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-2xs text-fg-subtle">/</span>
+          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-md bg-fg/[0.06] px-1.5 text-2xs font-semibold text-fg-subtle">/</span>
         </form>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-2">
           {me.data?.profile.is_demo && (
             <Badge tone="warning" className="hidden sm:inline-flex">
               Demo data
             </Badge>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden sm:inline-flex"
+          <button
+            type="button"
+            className={cn(roundGlass, 'hidden sm:flex')}
             aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}
             onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
           >
@@ -492,24 +514,26 @@ function TopBar() {
                 {resolved === 'dark' ? <Moon className="size-[18px]" /> : <Sun className="size-[18px]" />}
               </motion.span>
             </AnimatePresence>
-          </Button>
-          <Button variant="ghost" size="icon" asChild aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
-            <Link to="/notifications" className="relative">
-              <Bell className="size-[18px]" />
-              {unread > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute right-1 top-1 flex min-w-[18px] items-center justify-center rounded-full bg-negative px-1 text-[10px] font-bold leading-[18px] text-white"
-                >
-                  {unread > 9 ? '9+' : unread}
-                </motion.span>
-              )}
-            </Link>
-          </Button>
+          </button>
+          <Link to="/notifications" className={cn(roundGlass, 'relative')} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
+            <Bell className="size-[18px]" />
+            {unread > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-negative px-1 text-[10px] font-bold leading-[18px] text-white ring-2 ring-canvas"
+              >
+                {unread > 9 ? '9+' : unread}
+              </motion.span>
+            )}
+          </Link>
           <DropdownMenu>
-            <DropdownMenuTrigger className="ml-1 rounded-full focus-visible:ring-2 focus-visible:ring-ring" aria-label="Account menu">
-              {me.data ? <Avatar name={me.data.profile.display_name} color={me.data.profile.avatar_color} url={me.data.profile.avatar_url} size="sm" /> : <span className="block size-8 rounded-full bg-surface" />}
+            <DropdownMenuTrigger className="rounded-full focus-visible:ring-2 focus-visible:ring-ring" aria-label="Account menu">
+              {me.data ? (
+                <Avatar name={me.data.profile.display_name} color={me.data.profile.avatar_color} url={me.data.profile.avatar_url} className="size-10 ring-2 ring-white/70 dark:ring-white/10" />
+              ) : (
+                <span className="block size-10 rounded-full bg-fg/[0.06]" />
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64">
               {me.data && (

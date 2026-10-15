@@ -74,7 +74,7 @@ export default function GroupsPage() {
               <StaggerItem key={g.id}>
                 <Link
                   to={`/groups/${g.id}`}
-                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
+                  className="group relative flex h-full flex-col overflow-hidden tile rounded-[22px] p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lift"
                 >
                   <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-35" style={{ background: g.color }} />
                   <div className="flex items-start gap-3">

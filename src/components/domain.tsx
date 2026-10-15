@@ -25,9 +25,9 @@ export const CATEGORY_ICON_NAMES = Object.keys(ICONS);
 export function CategoryIcon({ category, className, size = 'md' }: { category?: Pick<Category, 'icon' | 'color'> | null; className?: string; size?: 'sm' | 'md' | 'lg' }) {
   const Icon = (category && ICONS[category.icon]) || Tag;
   const color = category?.color ?? '#94a3b8';
-  const box = { sm: 'size-8 rounded-lg', md: 'size-10 rounded-xl', lg: 'size-12 rounded-2xl' }[size];
+  const box = { sm: 'size-8 rounded-[10px]', md: 'size-11 rounded-[14px]', lg: 'size-12 rounded-[16px]' }[size];
   return (
-    <span className={cn('inline-flex shrink-0 items-center justify-center', box, className)} style={{ background: `${color}1f`, color }} aria-hidden>
+    <span className={cn('inline-flex shrink-0 items-center justify-center', box, className)} style={{ background: `linear-gradient(135deg, ${color}2e, ${color}14)`, boxShadow: `inset 0 0 0 1px ${color}24`, color }} aria-hidden>
       <Icon className={size === 'sm' ? 'size-4' : 'size-5'} />
     </span>
   );
@@ -70,10 +70,10 @@ export function ExpenseRow({ expense, categories, groupName, className }: { expe
         ? `${payers[0].user_id === user?.id ? 'You' : contacts?.get(payers[0].user_id)?.display_name ?? 'Someone'} paid`
         : '';
   return (
-    <div className={cn('group flex flex-wrap items-center rounded-xl transition-colors hover:bg-muted/60', expense.deleted_at && 'opacity-60', className)}>
+    <div className={cn('group flex flex-wrap items-center rounded-[18px] transition-colors hover:bg-fg/[0.04]', expense.deleted_at && 'opacity-60', className)}>
     <Link
       to={`/expenses/${expense.id}`}
-      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-3 focus-visible:bg-muted/60"
+      className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-3 py-3 focus-visible:bg-fg/[0.05]"
     >
       <div className="hidden w-11 shrink-0 text-center sm:block">
         <p className="text-2xs font-medium uppercase text-fg-subtle">{formatDate(expense.expense_date, { month: 'short' })}</p>
@@ -81,7 +81,7 @@ export function ExpenseRow({ expense, categories, groupName, className }: { expe
       </div>
       <CategoryIcon category={cat} />
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 truncate font-medium">
+        <p className="flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-tight">
           <span className="truncate">{expense.description}</span>
           {expense.recurring_template_id && <CalendarClock className="size-3.5 shrink-0 text-fg-subtle" aria-label="Recurring" />}
           {expense.deleted_at && (
@@ -100,7 +100,7 @@ export function ExpenseRow({ expense, categories, groupName, className }: { expe
       <div className="text-right">
         <p className={cn('text-2xs', effect.tone === 'positive' ? 'text-positive' : effect.tone === 'negative' ? 'text-negative' : 'text-fg-subtle')}>{effect.label}</p>
         {effect.amount > 0 && (
-          <p className={cn('tabular text-sm font-semibold', effect.tone === 'positive' ? 'text-positive' : 'text-negative')}>{formatMoney(effect.amount, expense.currency)}</p>
+          <p className={cn('tabular text-[15px] font-bold tracking-tight', effect.tone === 'positive' ? 'text-positive' : 'text-negative')}>{formatMoney(effect.amount, expense.currency)}</p>
         )}
       </div>
     </Link>
@@ -117,7 +117,7 @@ export function PlusGate({ children, feature, description, className }: { childr
   if (me.data?.isPlus) return <>{children}</>;
   return (
     <Card className={cn('relative overflow-hidden p-8 text-center', className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--plus)/0.12),transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--plus)/0.16),transparent_70%)]" />
       <div className="relative">
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-plus-soft text-plus">
           <Lock className="size-6" />
@@ -143,7 +143,7 @@ export function PlusBadge({ className }: { className?: string }) {
 }
 
 export function GroupBadge({ emoji, color, size = 'md' }: { emoji: string; color: string; size?: 'sm' | 'md' | 'lg' }) {
-  const box = { sm: 'size-8 text-base rounded-lg', md: 'size-11 text-xl rounded-xl', lg: 'size-16 text-3xl rounded-2xl' }[size];
+  const box = { sm: 'size-8 text-base rounded-[10px]', md: 'size-11 text-xl rounded-[14px]', lg: 'size-16 text-3xl rounded-[20px]' }[size];
   return (
     <span className={cn('inline-flex shrink-0 items-center justify-center', box)} style={{ background: `linear-gradient(135deg, ${color}33, ${color}14)`, boxShadow: `inset 0 0 0 1px ${color}33` }} aria-hidden>
       {emoji}

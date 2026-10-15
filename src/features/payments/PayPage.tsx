@@ -107,7 +107,7 @@ export default function PayPage() {
 
 function Breakdown({ plan, where }: { plan: PersonPlan; where: (g: string | null) => string }) {
   return (
-    <ul className="divide-y divide-border rounded-xl border border-border text-sm">
+    <ul className="divide-y divide-border rounded-2xl ring-1 ring-inset ring-border text-sm">
       {plan.parts.map((part) => (
         <li key={part.groupId ?? 'friends'} className="flex items-center justify-between gap-3 px-3 py-2">
           <span className="min-w-0 truncate">{where(part.groupId)}</span>

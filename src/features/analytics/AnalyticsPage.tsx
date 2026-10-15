@@ -111,7 +111,7 @@ export default function AnalyticsPage() {
       <FitBody className="space-y-4">
 
       {excluded.size > 0 && (
-        <p className="flex items-start gap-2 rounded-xl bg-muted px-4 py-3 text-xs text-fg-muted">
+        <p className="flex items-start gap-2 rounded-xl bg-fg/[0.06] px-4 py-3 text-xs text-fg-muted">
           <Info className="mt-0.5 size-3.5 shrink-0" />
           Showing {reportCurrency} only. Not included: {[...excluded.entries()].map(([c, n]) => `${n} in ${c}`).join(', ')}.{' '}
           {isPlus ? (convert ? <>Add rates for these in <Link to="/settings/currency" className="font-medium text-primary hover:underline">Currency settings</Link>.</> : 'Turn on conversion to include them using your recorded rates.') : 'Owenil never adds different currencies together without a rate you choose.'}
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
                 <div className="space-y-4">
                   <Stat label="Recurring expenses · period" value={formatMoney(recurringTotal, reportCurrency)} />
                   <Stat label="Repayments recorded · period" value={formatMoney(settledTotal, reportCurrency)} extra={<span className="text-xs text-fg-subtle">{reportCurrency} only</span>} />
-                  <Link to="/budgets" className="block rounded-2xl bg-surface p-5 text-sm font-medium shadow-tile ring-1 ring-border/60 hover:ring-primary">Budgets vs actual →</Link>
+                  <Link to="/budgets" className="block rounded-2xl tile p-5 text-sm font-medium hover:ring-primary">Budgets vs actual →</Link>
                 </div>
               </div>}
             </>

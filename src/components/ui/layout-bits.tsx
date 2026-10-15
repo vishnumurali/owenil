@@ -23,8 +23,8 @@ export function PageHeader({
     <div className={cn('mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0 space-y-0.5">
         {back}
-        <h1 className="truncate text-[1.45rem] font-semibold leading-tight sm:text-[1.9rem]">{title}</h1>
-        {description && <p className="line-clamp-1 text-xs text-fg-muted sm:line-clamp-2 sm:text-sm">{description}</p>}
+        <h1 className="truncate text-[1.75rem] font-bold leading-[1.1] sm:text-[2.25rem]">{title}</h1>
+        {description && <p className="line-clamp-1 text-[13px] text-fg-muted sm:line-clamp-2 sm:text-sm">{description}</p>}
       </div>
       {actions && (
         <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
@@ -69,7 +69,7 @@ export function EmptyState({
   return (
     <div className={cn('flex flex-col items-center justify-center px-6 py-12 text-center', className)}>
       <Illustration name={illustration} className="mb-4 h-28 w-40" />
-      <h3 className="text-base font-semibold">{title}</h3>
+      <h3 className="text-lg font-semibold">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-fg-muted">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -78,7 +78,7 @@ export function EmptyState({
 
 export function ErrorState({ error, onRetry, className }: { error: unknown; onRetry?: () => void; className?: string }) {
   return (
-    <div role="alert" className={cn('flex flex-col items-center justify-center rounded-2xl border border-dashed border-border px-6 py-10 text-center', className)}>
+    <div role="alert" className={cn('flex flex-col items-center justify-center rounded-[22px] border border-dashed border-fg/15 px-6 py-10 text-center', className)}>
       <AlertTriangle className="mb-3 size-8 text-negative" />
       <h3 className="font-semibold">We couldn’t load this</h3>
       <p className="mt-1 max-w-sm text-sm text-fg-muted">{errorMessage(error)}</p>
@@ -120,7 +120,7 @@ export function StaggerItem({ children, className }: { children: React.ReactNode
 export function SectionTitle({ children, action, className }: { children: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
     <div className={cn('mb-3 flex items-center justify-between gap-2', className)}>
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-subtle">{children}</h2>
+      <h2 className="text-[15px] font-semibold text-fg">{children}</h2>
       {action}
     </div>
   );

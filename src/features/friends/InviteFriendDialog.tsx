@@ -25,7 +25,7 @@ export function InviteLinkBox({ link, message }: { link: string; message: string
   const canShare = typeof navigator !== 'undefined' && 'share' in navigator;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 p-2 pl-3">
+      <div className="flex items-center gap-2 rounded-2xl ring-1 ring-inset ring-border bg-fg/[0.04] p-2 pl-3">
         <Link2 className="size-4 shrink-0 text-fg-subtle" />
         <input readOnly value={link} className="min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Invitation link" onFocus={(e) => e.currentTarget.select()} />
         <Button size="sm" variant={copied ? 'secondary' : 'primary'} onClick={copy}>

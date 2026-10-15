@@ -28,7 +28,7 @@ export function UpiPayPanel({
   const [showQr, setShowQr] = React.useState(!touch);
   if (!amountMinor || amountMinor <= 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border p-3 text-sm text-fg-muted">
+      <p className="rounded-xl border border-dashed border-fg/15 p-3 text-sm text-fg-muted">
         Enter an amount to pay {payeeName} with UPI.
       </p>
     );

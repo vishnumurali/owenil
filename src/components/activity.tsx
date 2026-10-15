@@ -81,7 +81,7 @@ export function ActivityList({ events, compact }: { events: ActivityEvent[]; com
         return (
           <li key={e.id}>
             {d.link ? (
-              <Link to={d.link} className="flex items-start gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/60">
+              <Link to={d.link} className="flex items-start gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-fg/[0.05]">
                 {inner}
               </Link>
             ) : (

@@ -294,7 +294,7 @@ function GroupBalances({ groupId, simplify, isAdmin, archived, onSettle }: { gro
             [...nets.entries()].flatMap(([currency, m]) => [
               ...(nets.size > 1
                 ? [
-                    <p key={`h-${currency}`} className="bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle first:rounded-t-2xl">
+                    <p key={`h-${currency}`} className="bg-fg/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle first:rounded-t-2xl">
                       {currency}
                     </p>,
                   ]
@@ -474,7 +474,7 @@ function GroupMembers({ groupId, myRole, archived, onInvite }: { groupId: string
             <p className="p-6 text-center text-sm text-fg-subtle">No active links. Links are shown only once when created — create a new one any time.</p>
           )}
         </Card>
-        <div className="mt-4 rounded-xl bg-muted/50 p-4 text-xs text-fg-muted">
+        <div className="mt-4 rounded-xl bg-fg/[0.04] p-4 text-xs text-fg-muted">
           <p className="mb-1 font-medium text-fg">Roles</p>
           <p><strong>Owner</strong> — everything, including deleting the group and transferring ownership.</p>
           <p><strong>Admins</strong> — edit settings, archive, manage members and invites, edit any expense.</p>

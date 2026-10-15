@@ -131,7 +131,7 @@ export default function ExpensesPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Bookmark className="size-4 text-fg-subtle" />
           {saved.data!.map((s) => (
-            <span key={s.id} className="inline-flex items-center gap-1 rounded-full border border-border bg-surface pl-3 text-sm">
+            <span key={s.id} className="inline-flex items-center gap-1 rounded-full bg-surface/70 ring-1 ring-inset ring-border pl-3 text-sm">
               <button onClick={() => setParams(new URLSearchParams(s.filters), { replace: true })} className="hover:text-primary">{s.name}</button>
               <button onClick={() => deleteFilter(s.id)} className="rounded-full p-1.5 text-fg-subtle hover:text-negative" aria-label={`Delete saved filter ${s.name}`}><X className="size-3" /></button>
             </span>

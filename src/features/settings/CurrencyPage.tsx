@@ -105,7 +105,7 @@ export default function CurrencyPage() {
             </form>
             {preview && <p className="mt-2 text-xs text-fg-muted">Preview: {preview}</p>}
             {error && <p role="alert" className="mt-2 text-sm text-negative">{error}</p>}
-            <div className="mt-5 divide-y divide-border rounded-xl border border-border">
+            <div className="mt-5 divide-y divide-border rounded-2xl ring-1 ring-inset ring-border">
               {rates.data?.length ? rates.data.map((r) => (
                 <div key={r.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                   <span className="tabular flex-1">1 {r.base_currency} = {Number(r.rate).toLocaleString('en-IN', { maximumFractionDigits: 10 })} {r.quote_currency}</span>

@@ -30,7 +30,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
           <DialogPrimitive.Portal forceMount>
             <DialogPrimitive.Overlay asChild forceMount>
               <motion.div
-                className="fixed inset-0 z-50 bg-[hsl(226_45%_4%/0.55)] backdrop-blur-[2px]"
+                className="fixed inset-0 z-50 bg-[hsl(232_40%_4%/0.5)] backdrop-blur-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -40,23 +40,23 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
             <DialogPrimitive.Content asChild forceMount>
               <motion.div
                 className={cn(
-                  'fixed z-50 flex max-h-[92dvh] w-full flex-col border border-border bg-elevated shadow-lift focus:outline-none',
-                  sheet ? 'inset-x-0 bottom-0 rounded-t-3xl safe-bottom' : cn('left-1/2 top-1/2 rounded-2xl', sizes[size]),
+                  'fixed z-50 flex max-h-[92dvh] w-full flex-col bg-elevated/[0.96] shadow-lift ring-1 ring-white/60 backdrop-blur-2xl focus:outline-none dark:ring-white/10',
+                  sheet ? 'inset-x-0 bottom-0 rounded-t-[32px] safe-bottom' : cn('left-1/2 top-1/2 rounded-[28px]', sizes[size]),
                 )}
                 initial={sheet ? { y: '100%' } : { opacity: 0, scale: 0.96, x: '-50%', y: '-46%' }}
                 animate={sheet ? { y: 0 } : { opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
                 exit={sheet ? { y: '100%' } : { opacity: 0, scale: 0.97, x: '-50%', y: '-48%' }}
                 transition={{ type: 'spring', damping: 32, stiffness: 380 }}
               >
-                {sheet && <div aria-hidden className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-border" />}
+                {sheet && <div aria-hidden className="mx-auto mt-2.5 h-1.5 w-11 rounded-full bg-fg/15" />}
                 <div className="flex items-start justify-between gap-4 px-5 pb-2 pt-4 sm:px-6 sm:pt-5">
                   <div className="space-y-1">
-                    <DialogPrimitive.Title className="font-display text-lg font-semibold">{title}</DialogPrimitive.Title>
+                    <DialogPrimitive.Title className="font-display text-xl font-semibold tracking-tight">{title}</DialogPrimitive.Title>
                     <DialogPrimitive.Description className={description ? 'text-sm text-fg-muted' : 'sr-only'}>
                       {description ?? (typeof title === 'string' ? title : 'Dialog')}
                     </DialogPrimitive.Description>
                   </div>
-                  <DialogPrimitive.Close className="-mr-2 rounded-lg p-2 text-fg-subtle transition-colors hover:bg-muted hover:text-fg" aria-label="Close">
+                  <DialogPrimitive.Close className="-mr-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-fg/[0.06] text-fg-muted transition-colors hover:bg-fg/[0.1] hover:text-fg" aria-label="Close">
                     <X className="size-4" />
                   </DialogPrimitive.Close>
                 </div>
@@ -96,7 +96,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
         <>
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium hover:bg-muted/60"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-surface/70 px-5 text-sm font-semibold ring-1 ring-inset ring-border transition-colors hover:bg-fg/[0.05]"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >

@@ -5,26 +5,26 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,color,box-shadow,transform,opacity,filter] duration-150 ease-out-expo active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  'relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold tracking-[-0.01em] transition-[background-color,color,box-shadow,transform,opacity,filter] duration-200 ease-out-expo active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-fg shadow-sm hover:brightness-110 hover:shadow-glow',
+        primary: 'bg-primary-gradient text-primary-fg shadow-glow hover:brightness-110',
         ink: 'bg-ink text-ink-fg shadow-sm hover:brightness-125',
-        secondary: 'bg-muted text-fg hover:bg-muted/70',
-        outline: 'bg-surface text-fg ring-1 ring-inset ring-border hover:bg-muted/60',
-        ghost: 'text-fg-muted hover:bg-muted hover:text-fg',
-        danger: 'bg-negative text-white hover:brightness-110',
+        secondary: 'bg-fg/[0.06] text-fg hover:bg-fg/[0.1]',
+        outline: 'bg-surface/70 text-fg ring-1 ring-inset ring-border hover:bg-surface hover:ring-fg-subtle/40 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]',
+        ghost: 'text-fg-muted hover:bg-fg/[0.06] hover:text-fg',
+        danger: 'bg-negative text-white shadow-sm hover:brightness-110',
         'danger-ghost': 'text-negative hover:bg-negative-soft',
-        plus: 'bg-gradient-to-r from-plus to-accent text-white shadow-sm hover:brightness-110',
+        plus: 'bg-gradient-to-r from-plus to-accent text-white shadow-glow-accent hover:brightness-110',
         link: 'h-auto rounded-md px-0 text-primary underline-offset-4 hover:underline active:scale-100',
       },
       size: {
-        sm: 'h-8 px-3.5 text-sm',
-        md: 'h-10 px-5 text-sm',
-        lg: 'h-12 px-7 text-base',
+        sm: 'h-9 px-4 text-[13px]',
+        md: 'h-11 px-5 text-sm',
+        lg: 'h-12 px-7 text-[15px]',
         icon: 'size-10',
-        'icon-sm': 'size-8',
+        'icon-sm': 'size-9',
       },
     },
     defaultVariants: { variant: 'primary', size: 'md' },

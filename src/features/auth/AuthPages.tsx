@@ -24,19 +24,19 @@ type Mode = 'login' | 'register' | 'forgot' | 'reset' | 'callback';
 
 export default function AuthPages({ mode }: { mode: Mode }) {
   return (
-    <div className="safe-top grid min-h-dvh bg-bg lg:grid-cols-[1.05fr_1fr]">
+    <div className="aurora safe-top grid min-h-dvh lg:grid-cols-[1fr_1.05fr] lg:p-3">
       <BrandPanel />
-      <div className="flex flex-col px-5 py-6 sm:px-10">
+      <div className="flex flex-col px-4 py-5 sm:px-10">
         <div className="flex items-center justify-between">
           <Link to="/" className="lg:invisible" aria-label="Owenil home">
             <Logo />
           </Link>
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
+          <Link to="/" className="glass inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-fg-muted transition-colors hover:text-fg">
             <ArrowLeft className="size-4" /> Home
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-center py-10">
-          <motion.div key={mode} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="w-full max-w-sm">
+        <div className="flex flex-1 items-center justify-center py-8">
+          <motion.div key={mode} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="glass w-full max-w-[26rem] rounded-[32px] p-6 sm:p-8">
             {mode === 'login' && <LoginForm />}
             {mode === 'register' && <RegisterForm />}
             {mode === 'forgot' && <ForgotForm />}
@@ -52,15 +52,14 @@ export default function AuthPages({ mode }: { mode: Mode }) {
 
 function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-[hsl(226_45%_7%)] p-10 text-white lg:flex lg:flex-col">
-      <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_20%_10%,hsl(160_70%_40%/0.35),transparent_60%),radial-gradient(60%_60%_at_90%_90%,hsl(192_80%_45%/0.3),transparent_60%)]" />
+    <div className="hero-card relative hidden overflow-hidden rounded-[36px] p-10 lg:flex lg:flex-col">
       <div className="relative">
         <Logo className="text-white" />
       </div>
       <div className="relative mt-auto max-w-md">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-          <h2 className="text-4xl font-semibold leading-tight">Shared expenses. Clear balances. Better together.</h2>
-          <p className="mt-4 text-white/70">Trips, flats, couples and families — split any bill fairly, see who owes whom, and settle up without awkward maths.</p>
+          <h2 className="text-5xl font-bold leading-[1.05]">Shared expenses. Clear balances. Better together.</h2>
+          <p className="mt-5 text-lg leading-relaxed text-white/75">Trips, flats, couples and families — split any bill fairly, see who owes whom, and settle up without awkward maths.</p>
         </motion.div>
         <div className="mt-10 grid grid-cols-3 gap-3">
           {[
@@ -68,9 +67,9 @@ function BrandPanel() {
             ['6 ways', 'to split'],
             ['Private', 'by design'],
           ].map(([a, b], i) => (
-            <motion.div key={a} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <p className="font-display text-lg font-semibold">{a}</p>
-              <p className="text-xs text-white/60">{b}</p>
+            <motion.div key={a} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.08 }} className="hero-chip rounded-[20px] p-4">
+              <p className="font-display text-xl font-bold">{a}</p>
+              <p className="text-xs text-white/70">{b}</p>
             </motion.div>
           ))}
         </div>
@@ -113,7 +112,7 @@ function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div>
-        <h1 className="text-2xl font-semibold">Welcome back</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Welcome back</h1>
         <p className="mt-1 text-sm text-fg-muted">Sign in to see your balances.</p>
       </div>
       <GoogleSignIn next={params.get('next')} />
@@ -216,7 +215,7 @@ function RegisterForm() {
           <MailCheck className="size-8" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold">Check your inbox</h1>
+          <h1 className="text-[1.75rem] font-bold leading-tight">Check your inbox</h1>
           <p className="mt-2 text-sm text-fg-muted">
             We sent a verification link to <strong className="text-fg">{sentTo}</strong>. Open it on this device to activate your account.
           </p>
@@ -234,7 +233,7 @@ function RegisterForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <div>
-        <h1 className="text-2xl font-semibold">Create your account</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Create your account</h1>
         <p className="mt-1 text-sm text-fg-muted">Free forever for everyday splitting.</p>
       </div>
       <GoogleSignIn next={params.get('next')} note="Owenil only records shared expenses and never transfers money." />
@@ -305,7 +304,7 @@ function ForgotForm() {
         <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary-soft text-primary">
           <MailCheck className="size-8" />
         </div>
-        <h1 className="text-2xl font-semibold">Check your email</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Check your email</h1>
         <p className="text-sm text-fg-muted">If an account exists for that address, a reset link is on its way.</p>
         <Link to="/login" className="block text-sm font-medium text-primary hover:underline">
           Back to sign in
@@ -316,7 +315,7 @@ function ForgotForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div>
-        <h1 className="text-2xl font-semibold">Forgot your password?</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Forgot your password?</h1>
         <p className="mt-1 text-sm text-fg-muted">We’ll email you a secure link to choose a new one.</p>
       </div>
       <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
@@ -353,7 +352,7 @@ function ResetForm() {
   if (!session) {
     return (
       <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold">Link expired</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Link expired</h1>
         <p className="text-sm text-fg-muted">This password reset link is invalid or has expired. Request a new one.</p>
         <Button asChild>
           <Link to="/forgot-password">Request a new link</Link>
@@ -367,7 +366,7 @@ function ResetForm() {
         <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
           <ShieldCheck className="size-6" />
         </div>
-        <h1 className="text-2xl font-semibold">Choose a new password</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Choose a new password</h1>
       </div>
       <Field label="New password" htmlFor="password" error={form.formState.errors.password?.message}>
         <PasswordInput id="password" autoComplete="new-password" autoFocus {...form.register('password')} />
@@ -396,7 +395,7 @@ function Callback() {
   if (errorDesc) {
     return (
       <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold">We couldn’t sign you in</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">We couldn’t sign you in</h1>
         <p className="text-sm text-fg-muted">{errorDesc}</p>
         <Button asChild>
           <Link to="/login">Go to sign in</Link>
@@ -407,7 +406,7 @@ function Callback() {
   if (!loading && !session) {
     return (
       <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold">Almost there</h1>
+        <h1 className="text-[1.75rem] font-bold leading-tight">Almost there</h1>
         <p className="text-sm text-fg-muted">If you opened a verification link in a different browser, or sign-in was cancelled, sign in here to continue.</p>
         <Button asChild>
           <Link to="/login">Sign in</Link>

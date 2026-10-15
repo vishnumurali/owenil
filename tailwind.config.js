@@ -29,8 +29,8 @@ export default {
         plus: { DEFAULT: v('plus'), soft: v('plus-soft') },
       },
       fontFamily: {
-        sans: ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['"Sora Variable"', 'Sora', '"Inter Variable"', 'system-ui', 'sans-serif'],
+        sans: ['"Geist Variable"', 'Geist', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['"Geist Variable"', 'Geist', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
@@ -45,8 +45,9 @@ export default {
       boxShadow: {
         card: '0 1px 2px hsl(var(--shadow) / 0.06), 0 4px 16px -4px hsl(var(--shadow) / 0.08)',
         lift: '0 2px 4px hsl(var(--shadow) / 0.06), 0 12px 32px -8px hsl(var(--shadow) / 0.18)',
-        glow: '0 0 0 1px hsl(var(--primary) / 0.25), 0 8px 30px -6px hsl(var(--primary) / 0.45)',
-        tile: '0 1px 1px hsl(var(--shadow) / 0.04), 0 10px 28px -14px hsl(var(--shadow) / 0.22)',
+        glow: '0 10px 30px -8px hsl(var(--primary) / 0.55)',
+        'glow-accent': '0 12px 34px -8px hsl(var(--accent) / 0.55)',
+        tile: '0 1px 1px hsl(var(--shadow) / 0.04), 0 14px 34px -20px hsl(var(--shadow) / 0.3)',
         dock: '0 1px 0 hsl(0 0% 100% / 0.06) inset, 0 18px 40px -12px hsl(var(--shadow) / 0.55)',
       },
       backgroundImage: {

@@ -146,7 +146,7 @@ export default function FriendsPage() {
             const bal = [...(perPerson.get(id)?.entries() ?? [])];
             return (
               <StaggerItem key={id}>
-                <Link to={`/friends/${id}`} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lift">
+                <Link to={`/friends/${id}`} className="flex items-center gap-3 tile rounded-[22px] p-4 transition-all hover:-translate-y-0.5 hover:shadow-lift">
                   <Avatar name={p?.display_name ?? '?'} color={p?.avatar_color} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{p?.display_name ?? 'Friend'}</p>
@@ -176,7 +176,7 @@ export default function FriendsPage() {
             {nonFriends.map((id) => {
               const p = contacts.data?.get(id);
               return (
-                <Link key={id} to={`/friends/${id}`} className="flex items-center gap-3 p-4 hover:bg-muted/50">
+                <Link key={id} to={`/friends/${id}`} className="flex items-center gap-3 p-4 hover:bg-fg/[0.05]">
                   <Avatar name={p?.display_name ?? '?'} color={p?.avatar_color} size="sm" />
                   <span className="flex-1 text-sm">{p?.display_name ?? 'Member'}</span>
                   {[...(perPerson.get(id)?.entries() ?? [])].map(([c, v]) => (
@@ -197,7 +197,7 @@ export default function FriendsPage() {
           <Card className="divide-y divide-border">
             {friends.data.outgoing.map((i) => (
               <div key={i.id} className="flex items-center gap-3 p-4">
-                <span className="flex size-9 items-center justify-center rounded-full bg-muted text-fg-subtle">
+                <span className="flex size-9 items-center justify-center rounded-full bg-fg/[0.06] text-fg-subtle">
                   <Clock className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1 text-sm">

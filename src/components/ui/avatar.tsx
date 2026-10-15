@@ -37,7 +37,7 @@ export function AvatarStack({ people, max = 4, size = 'sm' }: { people: { name: 
         <Avatar key={i} name={p.name} color={p.color} size={size} ring />
       ))}
       {people.length > max && (
-        <span className={cn('inline-flex items-center justify-center rounded-full bg-muted font-medium text-fg-muted ring-2 ring-surface', sizes[size])}>
+        <span className={cn('inline-flex items-center justify-center rounded-full bg-fg/[0.06] font-medium text-fg-muted ring-2 ring-surface', sizes[size])}>
           +{people.length - max}
         </span>
       )}

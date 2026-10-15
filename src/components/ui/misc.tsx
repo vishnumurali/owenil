@@ -9,12 +9,12 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchPrimitive.Switch
   <SwitchPrimitive.Root
     ref={ref}
     className={cn(
-      'peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-border transition-colors data-[state=checked]:bg-primary disabled:cursor-not-allowed disabled:opacity-50',
+      'peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-fg/15 transition-colors data-[state=checked]:bg-primary disabled:cursor-not-allowed disabled:opacity-50',
       className,
     )}
     {...props}
   >
-    <SwitchPrimitive.Thumb className="pointer-events-none block size-5 rounded-full bg-white shadow transition-transform duration-200 ease-out-expo data-[state=checked]:translate-x-5" />
+    <SwitchPrimitive.Thumb className="pointer-events-none block size-6 rounded-full bg-white shadow-[0_2px_6px_hsl(var(--shadow)/0.3)] transition-transform duration-300 ease-out-expo data-[state=checked]:translate-x-5" />
   </SwitchPrimitive.Root>
 ));
 Switch.displayName = 'Switch';
@@ -23,7 +23,7 @@ export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxPrimitive.Ch
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(
-      'peer size-5 shrink-0 rounded-md border border-border bg-surface transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-fg',
+      'peer size-5 shrink-0 rounded-[7px] border border-fg-subtle/50 bg-surface transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-fg',
       className,
     )}
     {...props}
@@ -41,7 +41,7 @@ export function Tooltip({ content, children }: { content: React.ReactNode; child
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>
-          <TooltipPrimitive.Content sideOffset={6} className="z-50 max-w-xs animate-fade-in rounded-lg bg-fg px-2.5 py-1.5 text-xs text-bg shadow-lift">
+          <TooltipPrimitive.Content sideOffset={6} className="z-50 max-w-xs animate-fade-in rounded-xl bg-fg px-3 py-1.5 text-xs font-medium text-bg shadow-lift">
             {content}
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
@@ -51,7 +51,7 @@ export function Tooltip({ content, children }: { content: React.ReactNode; child
 }
 
 const badgeTones = {
-  neutral: 'bg-muted text-fg-muted',
+  neutral: 'bg-fg/[0.07] text-fg-muted',
   primary: 'bg-primary-soft text-primary',
   positive: 'bg-positive-soft text-positive',
   negative: 'bg-negative-soft text-negative',
@@ -61,12 +61,12 @@ const badgeTones = {
 };
 
 export function Badge({ tone = 'neutral', className, ...props }: React.HTMLAttributes<HTMLSpanElement> & { tone?: keyof typeof badgeTones }) {
-  return <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium [&_svg]:size-3', badgeTones[tone], className)} {...props} />;
+  return <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold [&_svg]:size-3', badgeTones[tone], className)} {...props} />;
 }
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('relative overflow-hidden rounded-lg bg-muted', className)} aria-hidden {...props}>
+    <div className={cn('relative overflow-hidden rounded-xl bg-fg/[0.06]', className)} aria-hidden {...props}>
       <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-surface/50 to-transparent" />
     </div>
   );
@@ -76,7 +76,7 @@ export function Progress({ value, tone = 'primary', className, label }: { value:
   const color = { primary: 'bg-primary', warning: 'bg-warning', negative: 'bg-negative', positive: 'bg-positive' }[tone];
   return (
     <div
-      className={cn('h-2 w-full overflow-hidden rounded-full bg-muted', className)}
+      className={cn('h-2 w-full overflow-hidden rounded-full bg-fg/[0.08]', className)}
       role="progressbar"
       aria-label={label}
       aria-valuenow={Math.round(value)}
@@ -89,5 +89,5 @@ export function Progress({ value, tone = 'primary', className, label }: { value:
 }
 
 export function Spinner({ className }: { className?: string }) {
-  return <span className={cn('inline-block size-5 animate-spin rounded-full border-2 border-border border-t-primary', className)} role="status" aria-label="Loading" />;
+  return <span className={cn('inline-block size-5 animate-spin rounded-full border-2 border-fg/15 border-t-primary', className)} role="status" aria-label="Loading" />;
 }

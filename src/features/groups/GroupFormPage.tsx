@@ -119,7 +119,7 @@ export default function GroupFormPage() {
                   }}
                   className={cn(
                     'flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-medium transition-all',
-                    type === t ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-muted',
+                    type === t ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-fg/[0.05]',
                   )}
                 >
                   <span className="text-xl">{TYPE_EMOJI[t]}</span>
@@ -136,7 +136,7 @@ export default function GroupFormPage() {
               <div className="flex flex-wrap gap-1.5">
                 {EMOJIS.map((e) => (
                   <button key={e} type="button" onClick={() => form.setValue('emoji', e)} aria-label={`Icon ${e}`} aria-pressed={emoji === e}
-                    className={cn('flex size-9 items-center justify-center rounded-lg text-lg transition-all', emoji === e ? 'bg-primary-soft ring-2 ring-primary' : 'hover:bg-muted')}>
+                    className={cn('flex size-9 items-center justify-center rounded-lg text-lg transition-all', emoji === e ? 'bg-primary-soft ring-2 ring-primary' : 'hover:bg-fg/[0.05]')}>
                     {e}
                   </button>
                 ))}
@@ -167,7 +167,7 @@ export default function GroupFormPage() {
             control={form.control}
             name="simplify_debts"
             render={({ field }) => (
-              <label className="flex items-start justify-between gap-4 rounded-xl bg-muted/50 p-4">
+              <label className="flex items-start justify-between gap-4 rounded-xl bg-fg/[0.04] p-4">
                 <span>
                   <span className="block text-sm font-medium">Simplify debts</span>
                   <span className="block text-xs text-fg-muted">Suggest the fewest repayments that settle everyone. Each person’s total stays exactly the same.</span>
@@ -183,7 +183,7 @@ export default function GroupFormPage() {
             <h2 className="font-semibold">Add friends</h2>
             <p className="mb-4 text-sm text-fg-muted">Friends can be added now. Anyone else can join with an invite link after you create the group.</p>
             {friendIds.length === 0 ? (
-              <p className="rounded-xl bg-muted/50 p-4 text-sm text-fg-muted">No friends yet — you’ll get an invite link on the next screen.</p>
+              <p className="rounded-xl bg-fg/[0.04] p-4 text-sm text-fg-muted">No friends yet — you’ll get an invite link on the next screen.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {friendIds.map((id) => {
@@ -191,7 +191,7 @@ export default function GroupFormPage() {
                   const on = members.includes(id);
                   return (
                     <button key={id} type="button" aria-pressed={on} onClick={() => setMembers((m) => (on ? m.filter((x) => x !== id) : [...m, id]))}
-                      className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', on ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-muted')}>
+                      className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', on ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-fg/[0.05]')}>
                       <Avatar name={p?.display_name ?? '?'} color={p?.avatar_color} size="xs" />
                       {p?.display_name ?? 'Friend'}
                       {on && <Check className="size-3.5" />}

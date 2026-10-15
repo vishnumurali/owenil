@@ -70,7 +70,7 @@ export default function ContactsPage() {
           <h1 className="text-2xl font-semibold">Find friends from your contacts</h1>
           <p className="text-sm text-fg-muted">See which of your contacts already use Owenil and add them in one tap. Invite the rest by WhatsApp or SMS.</p>
         </div>
-        <p className="flex gap-2 rounded-2xl bg-muted/60 p-3 text-xs text-fg-muted">
+        <p className="flex gap-2 rounded-2xl bg-fg/[0.04] p-3 text-xs text-fg-muted">
           <ShieldCheck className="size-4 shrink-0 text-primary" />
           Numbers and emails are turned into one-way codes on your phone before checking. Owenil never uploads or stores your contacts.
         </p>
@@ -140,7 +140,7 @@ export default function ContactsPage() {
                 <Button size="sm" variant="outline" loading={addingAll} onClick={() => void addAll()}><UserPlus /> Add all ({addable.length})</Button>
               )}
             </div>
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border tile rounded-[22px]">
               {onOwenil.map((r) => (
                 <li key={r.person!.user_id} className="flex items-center gap-3 p-3">
                   <Avatar name={r.person!.display_name} color={r.person!.avatar_color} url={r.person!.avatar_url} size="sm" />
@@ -159,7 +159,7 @@ export default function ContactsPage() {
           {others.length === 0 ? (
             <p className="text-sm text-fg-muted">No one else to invite{needle ? ' with that name' : ''}.</p>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border tile rounded-[22px]">
               {others.slice(0, limit).map((r) => (
                 <li key={`${r.phone ?? ''}|${r.email ?? ''}`} className="flex items-center gap-3 p-3">
                   <Avatar name={r.name || '?'} color="#94a3b8" size="sm" />

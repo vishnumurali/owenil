@@ -126,7 +126,7 @@ if (existsSync(RES)) {
   writeFileSync(join(RES, 'mipmap-anydpi-v26', 'ic_launcher_round.xml'), adaptive);
 
   // Splash screens (older Android): the app's light background with the icon centred.
-  const BG = [0xf9, 0xf8, 0xf5, 255];
+  const BG = [0xf5, 0xf6, 0xfa, 255]; // the app's light canvas
   const splashes = ['drawable', ...['port', 'land'].flatMap((o) => Object.keys(densities).map((d) => `drawable-${o}-${d}`))];
   for (const dir of splashes) {
     const file = join(RES, dir, 'splash.png');
@@ -153,7 +153,7 @@ if (existsSync(XCASSETS)) {
   writeFileSync(join(XCASSETS, 'AppIcon.appiconset', 'AppIcon-512@2x.png'), png(1024, 1024, (px, py) => icon((px / 1024) * 64, (py / 1024) * 64, 'square'), 4, true));
   // Launch screen: the app's light background with the icon centred (one image, three scales).
   const S = 2732;
-  const BG = [0xf9, 0xf8, 0xf5, 255];
+  const BG = [0xf5, 0xf6, 0xfa, 255]; // the app's light canvas
   const s = Math.round(S * 0.2);
   const x0 = (S - s) / 2;
   const splash = png(S, S, (px, py) => {

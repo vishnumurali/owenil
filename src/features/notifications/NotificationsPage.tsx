@@ -73,7 +73,7 @@ export default function NotificationsPage() {
             const Icon = iconFor(n.kind);
             return (
               <div key={n.id} className={cn('group flex items-start gap-3 p-4 transition-colors', !n.read_at && 'bg-primary-soft/40')}>
-                <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl', n.kind.includes('failed') || n.kind === 'budget_over' ? 'bg-negative-soft text-negative' : 'bg-muted text-fg-muted')}>
+                <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl', n.kind.includes('failed') || n.kind === 'budget_over' ? 'bg-negative-soft text-negative' : 'bg-fg/[0.06] text-fg-muted')}>
                   <Icon className="size-4" />
                 </span>
                 <button className="min-w-0 flex-1 text-left" onClick={() => open(n)}>

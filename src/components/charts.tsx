@@ -30,6 +30,7 @@ export function useChartTheme() {
   return React.useMemo(
     () => ({
       primary: readVar('--primary'),
+      primary2: readVar('--primary-2'),
       grid: readVar('--border'),
       axis: readVar('--fg-subtle'),
       text: readVar('--fg'),
@@ -52,7 +53,7 @@ export interface ChartDatum {
 function MoneyTooltip({ active, payload, label, currency, names }: TooltipProps<number, string> & { currency: string; names?: [string, string?] }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border bg-elevated px-3 py-2 text-xs shadow-lift">
+    <div className="rounded-2xl bg-elevated/95 ring-1 ring-border/70 backdrop-blur-xl px-3 py-2 text-xs shadow-lift">
       <p className="mb-1 font-medium text-fg">{label}</p>
       {payload.map((p, i) => (
         <p key={i} className="flex items-center gap-2 text-fg-muted">
@@ -68,14 +69,21 @@ const axisMoney = (currency: string) => (v: number) => formatMoney(v, currency, 
 
 export function MoneyBarChart({ data, currency, height = 240, seriesName = 'Spent' }: { data: ChartDatum[]; currency: string; height?: number; seriesName?: string }) {
   const t = useChartTheme();
+  const fillId = `bar-${React.useId().replace(/:/g, '')}`;
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 4 }} barCategoryGap="28%">
-        <CartesianGrid vertical={false} stroke={t.grid} strokeDasharray="3 3" />
+        <defs>
+          <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={t.primary2} />
+            <stop offset="100%" stopColor={t.primary} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} stroke={t.grid} strokeDasharray="2 6" />
         <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: t.axis, fontSize: 11 }} interval="preserveStartEnd" />
         <YAxis tickLine={false} axisLine={false} tick={{ fill: t.axis, fontSize: 11 }} tickFormatter={axisMoney(currency)} width={56} />
         <Tooltip cursor={{ fill: t.muted, opacity: 0.6 }} content={<MoneyTooltip currency={currency} names={[seriesName]} />} />
-        <Bar dataKey="value" name={seriesName} fill={t.primary} radius={[4, 4, 0, 0]} maxBarSize={36} animationDuration={700} />
+        <Bar dataKey="value" name={seriesName} fill={`url(#${fillId})`} radius={[8, 8, 3, 3]} maxBarSize={34} animationDuration={700} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -140,9 +148,9 @@ export function RankedBars({
             <span className="tabular font-medium">{formatMoney(r.value, currency)}</span>
             <span className="tabular w-10 text-right text-xs text-fg-subtle">{total ? Math.round((r.value / total) * 100) : 0}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-2 overflow-hidden rounded-full bg-fg/[0.06]">
             <div
-              className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out-expo"
+              className="bg-primary-gradient h-full rounded-full transition-[width] duration-700 ease-out-expo"
               style={{ width: `${(r.value / top) * 100}%`, transitionDelay: `${i * 40}ms` }}
               title={`${typeof r.label === 'string' ? r.label : ''} ${formatMoney(r.value, currency)}`}
             />
@@ -174,7 +182,7 @@ export function ChartCard({
     <Card className={cn('p-5', className)}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold">{title}</h3>
+          <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
           {subtitle && <p className="text-xs text-fg-muted">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-1">
@@ -183,7 +191,7 @@ export function ChartCard({
             <button
               type="button"
               onClick={() => setAsTable((v) => !v)}
-              className="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-muted hover:text-fg"
+              className="flex size-8 items-center justify-center rounded-full text-fg-subtle transition-colors hover:bg-fg/[0.06] hover:text-fg"
               aria-label={asTable ? 'Show chart' : 'Show as table'}
               aria-pressed={asTable}
             >

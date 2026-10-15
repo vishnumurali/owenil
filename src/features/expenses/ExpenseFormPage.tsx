@@ -283,7 +283,7 @@ export default function ExpenseFormPage() {
                     return (
                       <button key={f} type="button" aria-pressed={on} disabled={editing && on && (source.data?.expense_payers ?? []).some((p) => p.user_id === f)}
                         onClick={() => setFriendIds((ids) => (on ? ids.filter((x) => x !== f) : [...ids, f]))}
-                        className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', on ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-muted')}>
+                        className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', on ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-fg/[0.05]')}>
                         <Avatar name={contacts.data?.get(f)?.display_name ?? '?'} color={contacts.data?.get(f)?.avatar_color} size="xs" />
                         {contacts.data?.get(f)?.display_name ?? 'Friend'}
                         {on && <Check className="size-3.5" />}
@@ -331,7 +331,7 @@ export default function ExpenseFormPage() {
               <div className="flex flex-wrap gap-2">
                 {people.map((p) => (
                   <button key={p} type="button" aria-pressed={payer === p} onClick={() => setPayer(p)}
-                    className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', payer === p ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-muted')}>
+                    className={cn('inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm transition-all', payer === p ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-fg/[0.05]')}>
                     <Avatar name={contacts.data?.get(p)?.display_name ?? '?'} color={contacts.data?.get(p)?.avatar_color} size="xs" />
                     {name(p)}
                   </button>
@@ -400,7 +400,7 @@ export default function ExpenseFormPage() {
             <Field label="Tags" htmlFor="tags" optional hint="Separate with commas, e.g. weekend, office">
               <Input id="tags" value={tags} onChange={(e) => setTags(e.target.value)} />
             </Field>
-            <div className="rounded-xl border border-dashed border-border p-4">
+            <div className="rounded-xl border border-dashed border-fg/15 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="flex items-center gap-2 text-sm font-medium"><FileImage className="size-4 text-fg-subtle" /> Receipt</p>
                 <PlusBadge />
@@ -431,7 +431,7 @@ export default function ExpenseFormPage() {
               )}
             </div>
             {!editing && (
-              <div className="rounded-xl bg-muted/50 p-4">
+              <div className="rounded-xl bg-fg/[0.04] p-4">
                 <label className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="size-4 text-accent" /> Repeat this expense</span>
                   <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="Repeat this expense" disabled={draft.method === 'itemized'} />

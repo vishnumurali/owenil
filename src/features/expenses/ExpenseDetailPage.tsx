@@ -184,7 +184,7 @@ export default function ExpenseDetailPage() {
                   receipt.data.meta?.mime_type === 'application/pdf' ? (
                     <a href={receipt.data.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"><FileText className="size-4" /> Open PDF receipt</a>
                   ) : (
-                    <a href={receipt.data.url} target="_blank" rel="noreferrer"><img src={receipt.data.url} alt={`Receipt for ${e.description}`} className="max-h-96 rounded-xl border border-border object-contain" /></a>
+                    <a href={receipt.data.url} target="_blank" rel="noreferrer"><img src={receipt.data.url} alt={`Receipt for ${e.description}`} className="max-h-96 rounded-2xl ring-1 ring-inset ring-border object-contain" /></a>
                   )
                 ) : (
                   <p className="text-sm text-fg-muted">{receipt.data?.meta?.merchant ? `Merchant: ${receipt.data.meta.merchant}` : 'No receipt image.'}</p>
@@ -266,7 +266,7 @@ function Comments({ expenseId, disabled }: { expenseId: string; disabled: boolea
             {comments.data.map((c) => (
               <li key={c.id} className="flex gap-2.5">
                 <Avatar name={contacts.data?.get(c.author_id)?.display_name ?? '?'} color={contacts.data?.get(c.author_id)?.avatar_color} size="xs" className="mt-0.5" />
-                <div className="min-w-0 flex-1 rounded-xl bg-muted/60 px-3 py-2 text-sm">
+                <div className="min-w-0 flex-1 rounded-xl bg-fg/[0.04] px-3 py-2 text-sm">
                   <p className="text-xs text-fg-subtle">
                     <span className="font-medium text-fg">{nameOf(c.author_id)}</span> · {formatRelative(c.created_at)}
                     {c.author_id === user?.id && <button onClick={() => remove(c.id)} className="ml-2 text-fg-subtle hover:text-negative">delete</button>}

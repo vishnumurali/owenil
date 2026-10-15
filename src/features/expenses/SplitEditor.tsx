@@ -133,7 +133,7 @@ export function SplitEditor({ people, currency, totalMinor, draft, onChange, all
               title={locked ? 'Itemized splitting is an Owenil Plus feature' : undefined}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
-                draft.method === m ? 'border-primary bg-primary text-primary-fg shadow-sm' : 'border-border text-fg-muted hover:bg-muted hover:text-fg',
+                draft.method === m ? 'border-primary bg-primary text-primary-fg shadow-sm' : 'border-border text-fg-muted hover:bg-fg/[0.05] hover:text-fg',
                 locked && 'cursor-not-allowed opacity-50',
               )}
             >
@@ -148,7 +148,7 @@ export function SplitEditor({ people, currency, totalMinor, draft, onChange, all
       {draft.method === 'itemized' ? (
         <ItemsEditor people={people} name={name} currency={currency} items={draft.items} onChange={(items) => set({ items })} />
       ) : (
-        <div className="divide-y divide-border rounded-xl border border-border">
+        <div className="divide-y divide-border rounded-2xl ring-1 ring-inset ring-border">
           {people.map((p) => {
             const included = draft.included[p] !== false;
             const alloc = allocMap.get(p);
@@ -226,7 +226,7 @@ function ItemsEditor({ people, name, currency, items, onChange }: { people: stri
   return (
     <div className="space-y-2">
       {items.map((it) => (
-        <div key={it.key} className="rounded-xl border border-border p-3">
+        <div key={it.key} className="rounded-2xl ring-1 ring-inset ring-border p-3">
           <div className="flex gap-2">
             <NativeSelect value={it.kind} onChange={(e) => upd(it.key, { kind: e.target.value as ItemDraft['kind'] })} className="h-9 w-28" aria-label="Line type">
               <option value="item">Item</option>
@@ -247,7 +247,7 @@ function ItemsEditor({ people, name, currency, items, onChange }: { people: stri
                 return (
                   <button key={p} type="button" aria-pressed={on}
                     onClick={() => upd(it.key, { assignees: on ? it.assignees.filter((x) => x !== p) : [...it.assignees, p] })}
-                    className={cn('rounded-full border px-2.5 py-0.5 text-xs transition-colors', on ? 'border-primary bg-primary-soft text-primary' : 'border-border text-fg-muted hover:bg-muted')}>
+                    className={cn('rounded-full border px-2.5 py-0.5 text-xs transition-colors', on ? 'border-primary bg-primary-soft text-primary' : 'border-border text-fg-muted hover:bg-fg/[0.05]')}>
                     {name(p)}
                   </button>
                 );

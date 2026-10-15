@@ -108,7 +108,7 @@ export function AddFriendDialog({ open, onOpenChange }: { open: boolean; onOpenC
       {error && <p role="alert" className="mt-3 text-sm text-negative">{error}</p>}
 
       {result?.person && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-surface p-3" data-testid="person-found">
+        <div className="mt-4 flex items-center gap-3 tile rounded-[22px] p-3" data-testid="person-found">
           <Avatar name={result.person.display_name} color={result.person.avatar_color} url={result.person.avatar_url} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{result.person.display_name}</p>
@@ -125,7 +125,7 @@ export function AddFriendDialog({ open, onOpenChange }: { open: boolean; onOpenC
       )}
 
       {result && !result.person && (
-        <div className="mt-4 space-y-3 rounded-2xl border border-dashed border-border p-4" data-testid="person-not-found">
+        <div className="mt-4 space-y-3 rounded-2xl border border-dashed border-fg/15 p-4" data-testid="person-not-found">
           <p className="flex items-center gap-2 font-medium">
             <UserX className="size-4 text-fg-subtle" /> Not registered on Owenil
           </p>

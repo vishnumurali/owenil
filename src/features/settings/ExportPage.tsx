@@ -107,7 +107,7 @@ export default function ExportPage() {
 
 function ExportButton({ icon: Icon, title, desc, loading, onClick }: { icon: React.ElementType; title: string; desc: string; loading: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} disabled={loading} className="flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-all hover:border-primary hover:bg-primary-soft/40 disabled:opacity-60">
+    <button onClick={onClick} disabled={loading} className="flex items-start gap-3 rounded-2xl ring-1 ring-inset ring-border p-4 text-left transition-all hover:border-primary hover:bg-primary-soft/40 disabled:opacity-60">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"><Icon className="size-5" /></span>
       <span>
         <span className="block font-medium">{loading ? 'Preparing…' : title}</span>

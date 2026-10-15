@@ -55,11 +55,10 @@ export default function PlusPage() {
 
   return (
     <div className="space-y-8">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-3xl bg-[hsl(226_45%_8%)] p-8 text-white sm:p-12">
-        <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_80%_0%,hsl(262_80%_60%/0.45),transparent_60%),radial-gradient(50%_70%_at_0%_100%,hsl(170_70%_45%/0.35),transparent_60%)]" />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="hero-card relative overflow-hidden rounded-[32px] p-8 sm:p-12">
         <div className="relative max-w-2xl">
-          <Badge className="bg-white/10 text-white"><Sparkles /> Owenil Plus</Badge>
-          <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">See the whole picture of your shared money.</h1>
+          <Badge className="hero-chip text-white"><Sparkles /> Owenil Plus</Badge>
+          <h1 className="mt-4 text-3xl font-bold sm:text-5xl">See the whole picture of your shared money.</h1>
           <p className="mt-3 text-white/70">Receipts, itemised bills, budgets with alerts, multi-currency reports and exports — for people who split a lot.</p>
           {isPlus && (
             <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm">
@@ -76,7 +75,7 @@ export default function PlusPage() {
           <table className="w-full text-sm">
             <caption className="sr-only">Free vs Plus feature comparison</caption>
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left">
+              <tr className="border-b border-border bg-fg/[0.04] text-left">
                 <th className="p-4 font-medium">Feature</th>
                 <th className="w-32 p-4 text-center font-medium">Free</th>
                 <th className="w-40 p-4 text-center font-medium text-plus">Plus</th>
@@ -130,7 +129,7 @@ export default function PlusPage() {
                 </>
               ) : (
                 <p className="mt-2 text-sm text-fg-muted">
-                  Not available for this account (server mode: <code>{dev.data?.mode ?? 'off'}</code>). An administrator can mark a tester with <code className="rounded bg-muted px-1">npm run db:tester -- you@example.com</code>.
+                  Not available for this account (server mode: <code>{dev.data?.mode ?? 'off'}</code>). An administrator can mark a tester with <code className="rounded bg-fg/[0.06] px-1">npm run db:tester -- you@example.com</code>.
                 </p>
               )}
             </Card>

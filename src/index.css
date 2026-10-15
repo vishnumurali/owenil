@@ -1,83 +1,94 @@
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/sora';
+@import '@fontsource-variable/geist';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   Owenil design tokens (HSL triplets). The app sits on a cool mint "canvas";
-   content lives on rounded white tiles; hero tiles and the dock use deep
-   "ink". Light = mint canvas & white tiles; dark = near-black canvas & navy
-   tiles. Accent = mint → teal.
+   Owenil design tokens (HSL triplets) — "Aurora glass".
+   Everything sits on a soft aurora (mint, sky and violet light on a cool
+   canvas). Content lives on translucent tiles; floating chrome (dock, top
+   controls, sheets, menus) is frosted glass. Primary = emerald → teal,
+   accent = violet. Dark mode is a first-class look: near-black blue canvas
+   with brighter aurora, not an inverted light theme.
    --------------------------------------------------------------------------- */
 @layer base {
   :root {
-    --bg: 40 33% 98%;
+    --bg: 228 33% 97.5%;
+    --canvas: 228 33% 97%;
     --surface: 0 0% 100%;
     --elevated: 0 0% 100%;
-    --muted: 40 14% 94.5%;
-    --border: 35 12% 88%;
-    --ring: 168 76% 36%;
-    --fg: 222 40% 12%;
-    --fg-muted: 220 12% 38%;
-    --fg-subtle: 220 9% 56%;
-    --primary: 166 78% 32%;
+    --muted: 228 24% 94%;
+    --border: 228 18% 89%;
+    --ring: 160 84% 36%;
+    --fg: 230 40% 9%;
+    --fg-muted: 228 12% 38%;
+    --fg-subtle: 228 9% 55%;
+    --primary: 160 84% 31%;
+    --primary-2: 184 86% 31%;
     --primary-fg: 0 0% 100%;
-    --primary-soft: 160 60% 93%;
-    --accent: 192 80% 38%;
-    --accent-soft: 190 70% 93%;
-    --positive: 158 72% 30%;
-    --positive-soft: 152 60% 93%;
-    --negative: 6 72% 50%;
-    --negative-soft: 6 90% 96%;
-    --warning: 34 92% 40%;
+    --primary-soft: 156 70% 93.5%;
+    --accent: 256 78% 60%;
+    --accent-soft: 256 92% 96%;
+    --positive: 158 76% 29%;
+    --positive-soft: 152 64% 93%;
+    --negative: 354 74% 50%;
+    --negative-soft: 354 90% 96.5%;
+    --warning: 32 94% 40%;
     --warning-soft: 42 100% 93%;
-    --plus: 262 70% 56%;
-    --plus-soft: 262 80% 96%;
-    --shadow: 222 40% 20%;
+    --plus: 262 74% 58%;
+    --plus-soft: 262 86% 96%;
+    --shadow: 230 40% 20%;
     --brand-1: 158 74% 52%;
     --brand-2: 172 70% 40%;
     --brand-3: 194 80% 42%;
-    --canvas: 156 18% 93.5%;
-    --ink: 222 47% 11%;
+    --aurora-1: 158 82% 56%;
+    --aurora-2: 196 94% 60%;
+    --aurora-3: 258 90% 70%;
+    --glass: 0 0% 100%;
+    --ink: 230 42% 9%;
     --ink-fg: 0 0% 100%;
-    --ink-muted: 220 18% 72%;
+    --ink-muted: 228 20% 74%;
     --radius: 18px;
     color-scheme: light;
   }
 
   .dark {
-    --bg: 226 45% 7%;
-    --surface: 224 38% 11%;
-    --elevated: 224 34% 14%;
-    --muted: 224 28% 16%;
-    --border: 224 24% 21%;
-    --ring: 162 70% 48%;
-    --fg: 220 30% 94%;
-    --fg-muted: 220 16% 70%;
-    --fg-subtle: 222 12% 52%;
-    --primary: 160 70% 46%;
-    --primary-fg: 226 45% 8%;
-    --primary-soft: 164 50% 15%;
-    --accent: 188 78% 52%;
-    --accent-soft: 192 50% 15%;
-    --positive: 156 64% 52%;
-    --positive-soft: 158 45% 14%;
-    --negative: 4 88% 68%;
-    --negative-soft: 4 40% 16%;
-    --warning: 38 95% 60%;
-    --warning-soft: 36 45% 15%;
-    --plus: 262 85% 74%;
-    --plus-soft: 262 35% 18%;
-    --shadow: 226 60% 2%;
+    --bg: 232 40% 5%;
+    --canvas: 232 40% 5%;
+    --surface: 232 30% 9.5%;
+    --elevated: 232 28% 12%;
+    --muted: 232 24% 13.5%;
+    --border: 232 20% 18%;
+    --ring: 158 72% 50%;
+    --fg: 228 40% 97%;
+    --fg-muted: 228 16% 72%;
+    --fg-subtle: 228 12% 54%;
+    --primary: 158 74% 50%;
+    --primary-2: 176 76% 46%;
+    --primary-fg: 232 40% 6%;
+    --primary-soft: 160 50% 13%;
+    --accent: 256 92% 76%;
+    --accent-soft: 256 40% 17%;
+    --positive: 154 66% 54%;
+    --positive-soft: 158 46% 13%;
+    --negative: 354 90% 70%;
+    --negative-soft: 354 42% 16%;
+    --warning: 38 95% 62%;
+    --warning-soft: 36 46% 14%;
+    --plus: 262 88% 76%;
+    --plus-soft: 262 36% 18%;
+    --shadow: 232 60% 2%;
     --brand-1: 156 70% 56%;
     --brand-2: 170 72% 44%;
     --brand-3: 192 82% 50%;
-    --canvas: 228 50% 4.5%;
-    --ink: 224 40% 14%;
-    --ink-fg: 220 30% 96%;
-    --ink-muted: 220 16% 66%;
+    --aurora-1: 158 80% 42%;
+    --aurora-2: 200 90% 48%;
+    --aurora-3: 262 84% 56%;
+    --glass: 232 30% 11%;
+    --ink: 232 32% 12%;
+    --ink-fg: 228 40% 97%;
+    --ink-muted: 228 16% 68%;
     color-scheme: dark;
   }
 
@@ -92,7 +103,7 @@
 
   body {
     @apply bg-bg text-fg font-sans antialiased;
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: 'ss01', 'cv11';
   }
 
   /* Smooth theme switching — disabled for reduced motion */
@@ -104,7 +115,8 @@
   }
 
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight;
+    @apply font-display;
+    letter-spacing: -0.03em;
   }
 
   :focus-visible {
@@ -138,6 +150,92 @@
   }
 }
 
+@layer components {
+  /* The aurora: soft coloured light behind every screen. */
+  .aurora {
+    background:
+      radial-gradient(38rem 26rem at 6% -8%, hsl(var(--aurora-1) / 0.24), transparent 70%),
+      radial-gradient(34rem 24rem at 100% 0%, hsl(var(--aurora-3) / 0.2), transparent 70%),
+      radial-gradient(44rem 30rem at 55% 115%, hsl(var(--aurora-2) / 0.18), transparent 70%),
+      hsl(var(--canvas));
+  }
+  .dark .aurora {
+    background:
+      radial-gradient(38rem 26rem at 6% -8%, hsl(var(--aurora-1) / 0.22), transparent 70%),
+      radial-gradient(34rem 24rem at 100% 0%, hsl(var(--aurora-3) / 0.24), transparent 70%),
+      radial-gradient(44rem 30rem at 55% 115%, hsl(var(--aurora-2) / 0.16), transparent 70%),
+      hsl(var(--canvas));
+  }
+
+  /* A content tile: almost-opaque surface, hairline edge, top light, soft depth. */
+  .tile {
+    background: hsl(var(--surface) / 0.86);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.75),
+      0 0 0 1px hsl(var(--border) / 0.75),
+      0 14px 34px -20px hsl(var(--shadow) / 0.3);
+  }
+  .dark .tile {
+    background: hsl(var(--surface) / 0.74);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.05),
+      0 0 0 1px hsl(0 0% 100% / 0.07),
+      0 18px 40px -22px hsl(0 0% 0% / 0.7);
+  }
+
+  /* Frosted glass for floating chrome: dock, rail, sheets, menus, the "+" fan. */
+  .glass {
+    background: hsl(var(--glass) / 0.74);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.7),
+      0 0 0 1px hsl(0 0% 100% / 0.55),
+      0 18px 44px -16px hsl(var(--shadow) / 0.32);
+  }
+  .dark .glass {
+    background: hsl(var(--glass) / 0.72);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.08),
+      0 0 0 1px hsl(0 0% 100% / 0.09),
+      0 22px 50px -18px hsl(0 0% 0% / 0.75);
+  }
+
+  /* The hero card (balances): a deep gradient mesh, the same in both themes, with white text. */
+  .hero-card {
+    color: white;
+    background:
+      radial-gradient(24rem 16rem at 105% -10%, hsl(var(--aurora-3) / 0.7), transparent 62%),
+      radial-gradient(22rem 15rem at -10% 110%, hsl(var(--aurora-1) / 0.55), transparent 62%),
+      linear-gradient(135deg, hsl(192 72% 24%) 0%, hsl(226 58% 20%) 55%, hsl(250 50% 22%) 100%);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.18),
+      0 0 0 1px hsl(0 0% 100% / 0.06),
+      0 26px 50px -22px hsl(var(--primary) / 0.55);
+  }
+  /* Glass chip that sits on a hero card. */
+  .hero-chip {
+    background: hsl(0 0% 100% / 0.1);
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 0 0 1px hsl(0 0% 100% / 0.12);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Vivid gradient for primary actions and highlights. */
+  .bg-primary-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-2)) 100%);
+  }
+  .bg-orb-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--aurora-1)) 0%, hsl(var(--primary-2)) 45%, hsl(var(--accent)) 100%);
+  }
+  .text-gradient {
+    background-image: linear-gradient(100deg, hsl(var(--primary)) 0%, hsl(var(--primary-2)) 45%, hsl(var(--accent)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
 @layer utilities {
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -149,15 +247,17 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
   .safe-top {
     padding-top: env(safe-area-inset-top);
-  }
-  .glass {
-    background: hsl(var(--surface) / 0.72);
-    backdrop-filter: saturate(160%) blur(14px);
   }
 }
 

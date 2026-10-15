@@ -81,10 +81,12 @@ export default function DashboardPage() {
           {balances.isError ? (
             <ErrorState error={balances.error} onRetry={() => balances.refetch()} />
           ) : (
-            <section aria-label="Your balance" className="relative shrink-0 overflow-hidden rounded-[28px] bg-ink p-4 text-ink-fg shadow-tile sm:p-5">
-              <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-brand-gradient opacity-35 blur-3xl" />
+            <section aria-label="Your balance" className="hero-card relative shrink-0 overflow-hidden rounded-[30px] p-4 sm:p-5">
               <div className="relative">
-                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-muted">Net balance</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">Net balance</p>
+                  <span className="hero-chip rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white/90">{currency}</span>
+                </div>
                 {balances.isLoading ? (
                   <Skeleton className="mt-2 h-10 w-40 bg-white/10" />
                 ) : (
@@ -92,10 +94,11 @@ export default function DashboardPage() {
                     amountMinor={primary.net}
                     currency={currency}
                     signDisplay="exceptZero"
-                    className={cn('mt-1 block whitespace-nowrap font-display text-[clamp(1.6rem,8.5vw,2.5rem)] font-semibold leading-none', primary.net > 0 ? 'text-emerald-300' : primary.net < 0 ? 'text-rose-300' : 'text-ink-fg')}
+                    className="mt-1.5 block whitespace-nowrap font-display text-[clamp(1.75rem,9vw,2.75rem)] font-bold leading-none tracking-[-0.04em] text-white"
                   />
                 )}
-                <p className="mt-1.5 truncate text-xs text-ink-muted sm:text-sm">
+                <p className="mt-2 flex items-center gap-1.5 truncate text-xs text-white/75 sm:text-sm">
+                  <span className={cn('size-2 shrink-0 rounded-full', primary.net > 0 ? 'bg-emerald-300' : primary.net < 0 ? 'bg-rose-300' : 'bg-white/60')} />
                   {primary.net === 0 ? 'You’re all settled up' : primary.net > 0 ? 'Overall, people owe you' : 'Overall, you owe others'}
                   {otherCurrencies.length > 0 && (
                     <span className="ml-1">· also {otherCurrencies.map((t) => formatMoney(t.net, t.currency, { signDisplay: 'exceptZero' })).join(', ')}</span>
@@ -143,17 +146,17 @@ export default function DashboardPage() {
 
 function BalanceChip({ to, label, icon, amount, currency, loading, tone, action }: { to: string; label: string; icon: React.ReactNode; amount: number; currency: string; loading: boolean; tone: 'positive' | 'negative'; action: string }) {
   return (
-    <Link to={to} className="group min-w-0 rounded-2xl bg-white/[0.07] px-3 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.12]">
-      <span className="flex items-center gap-1.5 text-2xs text-ink-muted [&_svg]:size-3.5">
-        {icon}
+    <Link to={to} className="hero-chip group min-w-0 rounded-[20px] px-3 py-2.5 transition-colors hover:bg-white/[0.16]">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium text-white/75 [&_svg]:size-3.5">
+        <span className={cn('flex size-5 items-center justify-center rounded-full', tone === 'positive' ? 'bg-emerald-300/25 text-emerald-200' : 'bg-rose-300/25 text-rose-200')}>{icon}</span>
         <span>{label}</span>
       </span>
       {loading ? (
         <Skeleton className="mt-1.5 h-6 w-24 bg-white/10" />
       ) : (
-        <AnimatedMoney amountMinor={amount} currency={currency} className={cn('mt-0.5 block truncate font-display text-base font-semibold sm:text-lg', amount === 0 ? 'text-ink-fg' : tone === 'positive' ? 'text-emerald-300' : 'text-rose-300')} />
+        <AnimatedMoney amountMinor={amount} currency={currency} className="mt-1 block truncate font-display text-[17px] font-bold tracking-tight text-white sm:text-lg" />
       )}
-      <span className="inline-flex items-center gap-1 text-2xs font-medium text-ink-muted group-hover:text-ink-fg">
+      <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-white/70 group-hover:text-white">
         {action} <ArrowRight className="size-3" />
       </span>
     </Link>
@@ -162,7 +165,7 @@ function BalanceChip({ to, label, icon, amount, currency, loading, tone, action 
 
 function PanelLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <Link to={to} className="mt-3 flex items-center justify-center gap-1 rounded-full py-2 text-sm font-medium text-primary hover:bg-surface">
+    <Link to={to} className="mt-3 flex items-center justify-center gap-1 rounded-full py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft">
       {children} <ArrowRight className="size-3.5" />
     </Link>
   );
@@ -217,7 +220,7 @@ function GroupsPanel({ edges }: { edges: ReturnType<typeof deriveMyEdges> }) {
         {active.map((g) => {
           const bal = groupBalance(g.id);
           return (
-            <Link key={g.id} to={`/groups/${g.id}`} className="flex flex-col gap-2 rounded-[22px] bg-surface p-3 shadow-tile ring-1 ring-border/60 transition-transform active:scale-[0.98]">
+            <Link key={g.id} to={`/groups/${g.id}`} className="flex flex-col gap-2 rounded-[22px] tile p-3 transition-transform active:scale-[0.98]">
               <GroupBadge emoji={g.emoji} color={g.color} />
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold">{g.name}</span>
@@ -330,7 +333,7 @@ function RepaymentsPanel() {
         <Card className="p-2">
           {upcoming.length ? (
             upcoming.map((t) => (
-              <Link key={t.id} to="/recurring" className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/60">
+              <Link key={t.id} to="/recurring" className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-fg/[0.05]">
                 <span className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent">
                   <CalendarClock className="size-4" />
                 </span>

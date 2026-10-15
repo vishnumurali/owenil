@@ -142,7 +142,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Theme">
           {([['light', 'Light', Sun], ['dark', 'Dark', Moon], ['system', 'System', Monitor]] as const).map(([v, label, Icon]) => (
             <button key={v} role="radio" aria-checked={theme === v} onClick={() => chooseTheme(v)}
-              className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all', theme === v ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-muted')}>
+              className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all', theme === v ? 'border-primary bg-primary-soft text-primary' : 'border-border hover:bg-fg/[0.05]')}>
               <Icon className="size-5" /> {label}
             </button>
           ))}
@@ -177,7 +177,7 @@ export default function SettingsPage() {
           { to: '/settings/privacy', icon: Shield, label: 'Privacy, data export & account deletion' },
           { to: '/export', icon: Download, label: 'Export centre' },
         ].map((l) => (
-          <Link key={l.to} to={l.to} className="flex items-center gap-3 p-4 text-sm font-medium transition-colors hover:bg-muted/50">
+          <Link key={l.to} to={l.to} className="flex items-center gap-3 p-4 text-sm font-medium transition-colors hover:bg-fg/[0.05]">
             <l.icon className="size-4 text-fg-subtle" /> <span className="flex-1">{l.label}</span> <ChevronRight className="size-4 text-fg-subtle" />
           </Link>
         ))}
@@ -308,7 +308,7 @@ function DevTools() {
           <RefreshCw /> Run due recurring expenses
         </Button>
       </div>
-      <p className="mt-3 text-xs text-fg-subtle">Reset demo data from your terminal: <code className="rounded bg-muted px-1">npm run db:reset-demo</code></p>
+      <p className="mt-3 text-xs text-fg-subtle">Reset demo data from your terminal: <code className="rounded bg-fg/[0.06] px-1">npm run db:reset-demo</code></p>
     </Card>
   );
 }

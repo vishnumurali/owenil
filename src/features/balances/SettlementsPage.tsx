@@ -74,7 +74,7 @@ export default function SettlementsPage() {
             const canReverse = !s.reversed_at && (s.payer_id === user?.id || s.payee_id === user?.id || s.created_by === user?.id);
             return (
               <div key={s.id} className="flex flex-wrap items-center gap-3 p-4">
-                <span className={`flex size-10 items-center justify-center rounded-xl ${s.reversed_at ? 'bg-muted text-fg-subtle' : 'bg-positive-soft text-positive'}`}>
+                <span className={`flex size-10 items-center justify-center rounded-xl ${s.reversed_at ? 'bg-fg/[0.06] text-fg-subtle' : 'bg-positive-soft text-positive'}`}>
                   <HandCoins className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
