@@ -346,7 +346,7 @@ test('14. add a friend by email or phone: registered people can be added, others
   await expect(dialog.getByTestId('person-not-found')).toContainText('Not registered on Owenil');
   await dialog.getByRole('button', { name: /Invite them to Owenil/ }).click();
   await expect(dialog.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', new RegExp(`^https://wa\\.me/91${unknown}\\?text=`));
-  await expect(dialog.getByRole('link', { name: 'SMS' })).toHaveAttribute('href', new RegExp(`^sms:\\+91${unknown}\\?body=`));
+  await expect(dialog.getByRole('link', { name: 'SMS' })).toHaveAttribute('href', new RegExp(`^sms:\\+91${unknown}\\?&body=`));
   await page.keyboard.press('Escape');
   await logout(page);
   // Xena sees the friend request.

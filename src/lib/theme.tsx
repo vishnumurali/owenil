@@ -1,3 +1,4 @@
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
 import * as React from 'react';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
@@ -50,6 +51,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     apply(resolved, !first.current);
     first.current = false;
+    // Phone apps: status-bar icons that stay readable on the app's own theme.
+    if (Capacitor.isNativePlatform()) {
+      void SystemBars.setStyle({ style: resolved === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => {});
+    }
   }, [resolved]);
 
   const setTheme = React.useCallback((t: ThemePreference) => {

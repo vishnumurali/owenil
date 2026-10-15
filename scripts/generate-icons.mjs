@@ -2,6 +2,7 @@
 // (4×4 supersampling) + a minimal PNG encoder using zlib.
 //   web:     public/owenil-icon-192.png, -512.png, docs/brand/owenil-icon-1024.png
 //   android: launcher icons (legacy, round, adaptive layers) and splash screens
+//   ios:     the app icon (1024×1024, opaque) and the launch-screen image
 import { deflateSync } from 'node:zlib';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -45,23 +46,27 @@ function icon(x, y, shape) {
 }
 
 // ---------- Raster + PNG ----------------------------------------------------------
-/** fn(px, py) → [r, g, b, a(0..255)] in pixel space (sub-pixel coordinates). */
-function png(width, height, fn, ss = 4) {
-  const raw = Buffer.alloc((width * 4 + 1) * height);
+/**
+ * fn(px, py) → [r, g, b, a(0..255)] in pixel space (sub-pixel coordinates).
+ * opaque: write RGB without an alpha channel (iOS app icons must not have one).
+ */
+function png(width, height, fn, ss = 4, opaque = false) {
+  const bpp = opaque ? 3 : 4;
+  const raw = Buffer.alloc((width * bpp + 1) * height);
   for (let py = 0; py < height; py++) {
-    raw[py * (width * 4 + 1)] = 0;
+    raw[py * (width * bpp + 1)] = 0;
     for (let px = 0; px < width; px++) {
       const acc = [0, 0, 0, 0];
       for (let sy = 0; sy < ss; sy++) for (let sx = 0; sx < ss; sx++) {
         const s = fn(px + (sx + 0.5) / ss, py + (sy + 0.5) / ss);
         acc[0] += s[0] * s[3]; acc[1] += s[1] * s[3]; acc[2] += s[2] * s[3]; acc[3] += s[3];
       }
-      const o = py * (width * 4 + 1) + 1 + px * 4;
+      const o = py * (width * bpp + 1) + 1 + px * bpp;
       const alpha = acc[3] / (ss * ss);
       raw[o] = alpha ? Math.round(acc[0] / acc[3]) : 0;
       raw[o + 1] = alpha ? Math.round(acc[1] / acc[3]) : 0;
       raw[o + 2] = alpha ? Math.round(acc[2] / acc[3]) : 0;
-      raw[o + 3] = Math.round(alpha);
+      if (!opaque) raw[o + 3] = Math.round(alpha);
     }
   }
   const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
@@ -73,7 +78,7 @@ function png(width, height, fn, ss = 4) {
     return Buffer.concat([len, td, c]);
   };
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4); ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4); ihdr[8] = 8; ihdr[9] = opaque ? 2 : 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
 const square = (size, shape) => png(size, size, (px, py) => icon((px / size) * 64, (py / size) * 64, shape));
@@ -139,4 +144,23 @@ if (existsSync(RES)) {
     }, 2));
   }
   console.log('Android launcher icons and splash screens written to android/app/src/main/res/');
+}
+
+// ---------- iOS -------------------------------------------------------------------
+const XCASSETS = join(ROOT, 'ios', 'App', 'App', 'Assets.xcassets');
+if (existsSync(XCASSETS)) {
+  // App icon: square (iOS rounds the corners itself) and opaque.
+  writeFileSync(join(XCASSETS, 'AppIcon.appiconset', 'AppIcon-512@2x.png'), png(1024, 1024, (px, py) => icon((px / 1024) * 64, (py / 1024) * 64, 'square'), 4, true));
+  // Launch screen: the app's light background with the icon centred (one image, three scales).
+  const S = 2732;
+  const BG = [0xf9, 0xf8, 0xf5, 255];
+  const s = Math.round(S * 0.2);
+  const x0 = (S - s) / 2;
+  const splash = png(S, S, (px, py) => {
+    if (px < x0 || px > x0 + s || py < x0 || py > x0 + s) return BG;
+    const c = icon(((px - x0) / s) * 64, ((py - x0) / s) * 64, 'rounded');
+    return c[3] ? c : BG;
+  }, 2, true);
+  for (const f of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png']) writeFileSync(join(XCASSETS, 'Splash.imageset', f), splash);
+  console.log('iOS app icon and launch screen written to ios/App/App/Assets.xcassets/');
 }

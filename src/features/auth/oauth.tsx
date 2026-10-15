@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { env, isSupabaseConfigured } from '@/lib/env';
 import { errorMessage } from '@/lib/errors';
 import { authRedirectUrl, openSignInPage } from '@/lib/native-auth';
-import { isAndroidApp } from '@/lib/native-upi';
+import { isNativeApp } from '@/lib/native-upi';
 import { safeNextPath } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -61,7 +61,7 @@ export function GoogleSignIn({ next, note }: { next: string | null; note?: React
     setBusy(true);
     const safeNext = safeNextPath(next, '');
     const redirectTo = authRedirectUrl(`auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`);
-    if (isAndroidApp()) {
+    if (isNativeApp()) {
       try {
         const { data, error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
         if (err) throw err;

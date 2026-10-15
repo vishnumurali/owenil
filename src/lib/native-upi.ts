@@ -12,6 +12,11 @@ interface UpiPlugin {
 /** Native code in android/app/src/main/java/.../UpiPlugin.java. */
 const Upi = registerPlugin<UpiPlugin>('Upi');
 
+/** True inside the Owenil phone apps (Android or iPhone), never in a browser. */
+export function isNativeApp(): boolean {
+  return env.platform !== 'web' && Capacitor.isNativePlatform();
+}
+
 /** True only inside the Owenil Android app (never in a browser). */
 export function isAndroidApp(): boolean {
   return env.platform === 'android' && Capacitor.getPlatform() === 'android';

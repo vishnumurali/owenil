@@ -4,13 +4,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { appUrl } from '@/lib/env';
 import { errorMessage, unwrap } from '@/lib/errors';
-import { isAndroidApp } from '@/lib/native-upi';
+import { isNativeApp } from '@/lib/native-upi';
 import { useMe } from '@/data/queries';
 import { Button } from '@/components/ui/button';
 
-/** A link that leaves Owenil (WhatsApp, SMS, email). In the Android app it opens the matching app. */
+/** A link that leaves Owenil (WhatsApp, SMS, email). In the phone apps it opens the matching app. */
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const web = !isAndroidApp() && href.startsWith('http');
+  const web = !isNativeApp() && href.startsWith('http');
   return (
     <Button variant="outline" size="sm" asChild>
       <a href={href} {...(web ? { target: '_blank', rel: 'noreferrer' } : {})}>
@@ -74,7 +74,7 @@ export function InviteTargets({ name, phone, email }: { name?: string | null; ph
           </ExternalLink>
         )}
         {phone && (
-          <ExternalLink href={`sms:${phone}?body=${encodeURIComponent(message)}`}>
+          <ExternalLink href={`sms:${phone}?&body=${encodeURIComponent(message)}`}>
             <MessageSquareText /> SMS
           </ExternalLink>
         )}

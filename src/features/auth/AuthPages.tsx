@@ -24,7 +24,7 @@ type Mode = 'login' | 'register' | 'forgot' | 'reset' | 'callback';
 
 export default function AuthPages({ mode }: { mode: Mode }) {
   return (
-    <div className="grid min-h-dvh bg-bg lg:grid-cols-[1.05fr_1fr]">
+    <div className="safe-top grid min-h-dvh bg-bg lg:grid-cols-[1.05fr_1fr]">
       <BrandPanel />
       <div className="flex flex-col px-5 py-6 sm:px-10">
         <div className="flex items-center justify-between">

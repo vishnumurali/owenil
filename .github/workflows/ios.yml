@@ -1,0 +1,118 @@
+# Builds the Owenil iPhone app on GitHub's macOS runners (free for public
+# repositories), checks it starts in an iPhone simulator, and publishes an
+# unsigned .ipa at a permanent link:
+#   https://github.com/vishnumurali/owenil/releases/download/ios-latest/Owenil-unsigned.ipa
+# Installing it on an iPhone needs re-signing with your own (free) Apple ID,
+# for example with Sideloadly or AltStore. See docs/IOS.md.
+name: iPhone app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ios
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the web app for the iPhone app
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ENABLE_DEV_TOOLS: ${{ vars.VITE_ENABLE_DEV_TOOLS }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "::error::Repository variable VITE_SUPABASE_URL is not set"; exit 1; }
+          npx tsc --noEmit -p tsconfig.json
+          npx vite build --mode ios
+      - run: npx cap sync ios
+      - name: Use the newest Xcode on the runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Build for the iPhone simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -n 60
+      - name: Open the app in an iPhone simulator
+        run: |
+          UDID=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("^iPhone [0-9]+$|^iPhone [0-9]+ Pro$"))] | last | .udid')
+          echo "Simulator: $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/sim/Build/Products/Debug-iphonesimulator/App.app
+          mkdir -p ios-smoke
+          running() { xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:io.github.vishnumurali.owenil"; }
+          xcrun simctl launch "$UDID" io.github.vishnumurali.owenil
+          sleep 25
+          xcrun simctl io "$UDID" screenshot ios-smoke/1-start.png
+          running || { echo "::error::The app is not running 25 s after launch (crashed?)"; exit 1; }
+          echo "✓ The app starts and keeps running"
+          # App links: what Google sign-in and auth emails use to come back to the app.
+          xcrun simctl openurl "$UDID" "io.github.vishnumurali.owenil://auth/callback?error_description=App%20link%20test"
+          sleep 10
+          xcrun simctl io "$UDID" screenshot ios-smoke/2-app-link.png
+          running || { echo "::error::The app stopped after opening an app link"; exit 1; }
+          echo "✓ An app link opens the app"
+          xcrun simctl spawn "$UDID" log show --last 3m --style compact --predicate 'process == "App"' 2>/dev/null | grep -iE "error|exception|⚡️" | tail -n 40 || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-smoke-screenshots
+          path: ios-smoke/
+          if-no-files-found: ignore
+
+      - name: Build the installable app (unsigned .ipa for sideloading)
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build/device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION=1.0.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tail -n 30
+          rm -rf Payload && mkdir Payload
+          cp -R build/device/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry Owenil-unsigned.ipa Payload
+          for k in CFBundleIdentifier CFBundleDisplayName CFBundleShortVersionString MinimumOSVersion; do
+            echo "$k: $(/usr/libexec/PlistBuddy -c "Print :$k" Payload/App.app/Info.plist)"
+          done
+          ls -la Owenil-unsigned.ipa
+      - uses: actions/upload-artifact@v7
+        with:
+          name: owenil-ipa
+          path: Owenil-unsigned.ipa
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: owenil-ipa
+      - name: Publish at the permanent "ios-latest" download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete ios-latest --yes --cleanup-tag || true
+          gh release create ios-latest Owenil-unsigned.ipa --prerelease --target "$GITHUB_SHA" \
+            --title "Owenil for iPhone (build ${{ github.run_number }})" \
+            --notes "Unsigned iPhone app for testing. Install it with Sideloadly or AltStore and your own free Apple ID (re-install every 7 days); see docs/IOS.md. Built from ${GITHUB_SHA::7}."

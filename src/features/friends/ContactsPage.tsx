@@ -5,7 +5,7 @@ import { ArrowLeft, BookUser, Search, Settings2, ShieldCheck, UserPlus } from 'l
 import { toast } from 'sonner';
 import { errorMessage } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks';
-import { isAndroidApp } from '@/lib/native-upi';
+import { isNativeApp } from '@/lib/native-upi';
 import { ContactsAccessDenied, openAppSettings, readPhoneContacts } from '@/lib/native-contacts';
 import { formatPhone, matchAddressBook, requestFriend, type ContactMatch, type Relation } from '@/data/people';
 import { invalidateFinancial, qk } from '@/data/queries';
@@ -21,7 +21,7 @@ type State = { step: 'intro' } | { step: 'loading' } | { step: 'denied' } | { st
 const SHOW = 150;
 
 /**
- * Android app: "Find friends from contacts". Reads the phone's contacts (after
+ * Phone apps: "Find friends from contacts". Reads the phone's contacts (after
  * the user allows it), checks them against Owenil with one-way codes, then
  * lists who's on Owenil (add / accept) and who could be invited.
  */
@@ -51,10 +51,10 @@ export default function ContactsPage() {
   const setRelation = (userId: string, relation: Relation) =>
     setState((s) => (s.step !== 'ready' ? s : { step: 'ready', rows: s.rows.map((r) => (r.person?.user_id === userId ? { ...r, person: { ...r.person, relation } } : r)) }));
 
-  if (!isAndroidApp()) {
+  if (!isNativeApp()) {
     return (
       <Screen>
-        <p className="text-sm text-fg-muted">Finding friends from your phone’s contacts works in the Owenil Android app. Here, use “Add friend” with an email or phone number.</p>
+        <p className="text-sm text-fg-muted">Finding friends from your phone’s contacts works in the Owenil phone app (Android or iPhone). Here, use “Add friend” with an email or phone number.</p>
         <Button asChild variant="outline"><Link to="/friends">Back to friends</Link></Button>
       </Screen>
     );

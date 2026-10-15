@@ -83,7 +83,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg">
+    <div className="safe-top flex min-h-dvh flex-col bg-bg">
       <div className="pointer-events-none fixed inset-0 bg-hero-glow" />
       <header className="relative flex items-center justify-between p-5">
         <Logo />

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, Skeleton } from '@/components/ui/misc';
 import { EmptyState, ErrorState, FitBody, FitScreen, PageHeader, SectionTitle, Stagger, StaggerItem } from '@/components/ui/layout-bits';
-import { isAndroidApp } from '@/lib/native-upi';
+import { isNativeApp } from '@/lib/native-upi';
 import { InviteFriendDialog } from './InviteFriendDialog';
 import { AddFriendDialog } from './AddFriendDialog';
 
@@ -83,7 +83,7 @@ export default function FriendsPage() {
             <Button onClick={() => setAddOpen(true)}>
               <UserPlus /> Add friend
             </Button>
-            {isAndroidApp() && (
+            {isNativeApp() && (
               <Button variant="outline" onClick={() => navigate('/friends/contacts')}>
                 <BookUser /> From contacts
               </Button>

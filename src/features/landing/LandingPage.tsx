@@ -16,7 +16,7 @@ export default function LandingPage() {
   const { resolved, setTheme } = useTheme();
   return (
     <div className="min-h-dvh overflow-x-hidden bg-bg">
-      <header className="glass sticky top-0 z-30 border-b border-border/60">
+      <header className="glass safe-top sticky top-0 z-30 border-b border-border/60">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-5">
           <Logo />
           <nav className="ml-8 hidden gap-6 text-sm text-fg-muted md:flex" aria-label="Sections">

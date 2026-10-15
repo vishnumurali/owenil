@@ -47,7 +47,7 @@ export function FitScreen({ className, children }: { className?: string; childre
 /** The scrolling part of a FitScreen; leaves room for the floating dock on phones. */
 export function FitBody({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('scrollbar-thin -mx-4 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-28 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:pb-8', className)}>
+    <div className={cn('scrollbar-thin -mx-4 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(7rem_+_env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:pb-8', className)}>
       {children}
     </div>
   );

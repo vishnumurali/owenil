@@ -7,7 +7,7 @@ let launchUrl: string | undefined;
 let android = true;
 
 vi.mock('./supabase', () => ({ supabase: { auth: { exchangeCodeForSession } } }));
-vi.mock('./native-upi', () => ({ isAndroidApp: () => android }));
+vi.mock('./native-upi', () => ({ isNativeApp: () => android }));
 vi.mock('./env', () => ({ appUrl: (p: string) => `https://vishnumurali.github.io/owenil/${p.replace(/^\//, '')}` }));
 vi.mock('@capacitor/browser', () => ({ Browser: { close: browserClose, open: vi.fn() } }));
 vi.mock('@capacitor/app', () => ({

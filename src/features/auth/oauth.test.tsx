@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const signInWithOAuth = vi.fn(async () => ({ data: {}, error: null }));
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { signInWithOAuth } } }));
 let android = false;
-vi.mock('@/lib/native-upi', () => ({ isAndroidApp: () => android }));
+vi.mock('@/lib/native-upi', () => ({ isNativeApp: () => android }));
 const browserOpen = vi.fn(async () => {});
 vi.mock('@capacitor/browser', () => ({ Browser: { open: browserOpen, close: vi.fn(async () => {}) } }));
 vi.mock('@/lib/env', () => ({

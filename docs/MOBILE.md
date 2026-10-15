@@ -47,7 +47,7 @@ Contacts are never uploaded or stored. The native part is `ContactsPlugin.java` 
 
 | Part | Where |
 |---|---|
-| Web app, Android mode | `vite build --mode android` → `dist-android/`, base path `/`, settings in `.env.android`. Links that leave the app (invite links, email links) use `VITE_PUBLIC_URL`, the website. The page stays inside the safe area (no `viewport-fit=cover`), so the status and navigation bars never cover content |
+| Web app, Android mode | `vite build --mode android` → `dist-app/`, base path `/`, settings in `.env.android`. Links that leave the app (invite links, email links) use `VITE_PUBLIC_URL`, the website. The page stays inside the safe area (no `viewport-fit=cover`), so the status and navigation bars never cover content |
 | Native project | `android/` (Capacitor template). App id `io.github.vishnumurali.owenil` |
 | UPI plugin | `android/app/src/main/java/io/github/vishnumurali/owenil/UpiPlugin.java`: `canPay` and `pay` (starts the UPI intent with `startActivityForResult` and returns the app's `response`). Registered in `MainActivity`. The manifest declares `<queries>` for `upi://pay` links (scheme and host, the form UPI apps register) and Google Pay, for Android 11+ package visibility |
 | JS bridge | `src/lib/native-upi.ts` (`isAndroidApp`, `payWithUpiApp`, `parseUpiResponse`) and `AndroidUpiPay` in `src/features/payments/PayDialog.tsx` |
@@ -91,5 +91,5 @@ To debug the app's WebView on a USB-connected phone, open `chrome://inspect` in 
 - **Testing builds.** The APK is installed from GitHub, not the Play Store. Publishing on Google Play needs a one-time $25 developer account, which isn't free, so it isn't done. With Play App Signing the existing key can serve as the upload key.
 - **Google Pay and personal UPI IDs.** Some UPI apps limit or decline payments to personal (non-merchant) UPI IDs when the payment is started from another app, or show a risk warning. If that happens, **Other UPI app** or scanning a QR code inside the UPI app still works. Owenil can't change that policy.
 - **Links open the website.** Invite links (`/join/…`) open in the browser. Android App Links into the app would need an `assetlinks.json` at the root of `vishnumurali.github.io` (the user-site repository) or a custom domain.
-- **iOS** works the same way (`npx cap add ios`), but building needs a Mac with Xcode, and installing on iPhones outside TestFlight needs a paid Apple developer account.
+- **iPhone:** see [IOS.md](IOS.md). The iPhone app is built in CI on GitHub's macOS runners and installed by sideloading with a free Apple ID (renew every 7 days); the website can also be added to the Home Screen.
 - **A fully native UI** (React Native or Expo) can reuse `@owenil/core` (money, splitting, ledger, simplification, recurrence and UPI link rules) unchanged if the app ever needs it.

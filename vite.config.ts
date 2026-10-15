@@ -7,7 +7,8 @@ import { fileURLToPath, URL } from 'node:url';
 
 // Owenil is served from GitHub Pages at https://vishnumurali.github.io/owenil/.
 // Override with VITE_BASE_PATH (must start and end with "/") for other hosts.
-// `--mode android` builds the copy packaged in the Android app (see .env.android).
+// `--mode android` and `--mode ios` build the copy packaged in the phone apps
+// (see .env.android, .env.ios) into dist-app/, which Capacitor copies into each app.
 
 // GitHub Pages can't send response headers, so the policy ships as a <meta> tag.
 // (frame-ancestors is ignored in <meta>; public/theme-init.js refuses framing instead.)
@@ -61,6 +62,7 @@ function staticHosting(): Plugin {
 export default defineConfig(({ mode }) => {
   const fileEnv = loadEnv(mode, process.cwd(), 'VITE_');
   const android = mode === 'android';
+  const phoneApp = android || mode === 'ios';
   const base = process.env.VITE_BASE_PATH ?? fileEnv.VITE_BASE_PATH ?? '/owenil/';
   return {
   base,
@@ -72,7 +74,7 @@ export default defineConfig(({ mode }) => {
     },
   },
   build: {
-    outDir: android ? 'dist-android' : 'dist',
+    outDir: phoneApp ? 'dist-app' : 'dist',
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 900,

@@ -9,7 +9,7 @@ import {
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/theme';
-import { isAndroidApp } from '@/lib/native-upi';
+import { isNativeApp } from '@/lib/native-upi';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useMe, useNotifications } from '@/data/queries';
 import { Logo } from '@/components/brand/Logo';
@@ -135,7 +135,7 @@ export function AppShell() {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-canvas">
+    <div className="safe-top flex h-dvh overflow-hidden bg-canvas">
       <ThemeSync />
       <a href="#main" className="sr-only z-50 rounded-full bg-primary px-4 py-2 text-primary-fg focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
@@ -148,7 +148,7 @@ export function AppShell() {
               JavaScript-held opacity, so navigation can never get stuck invisible. */}
           <div
             key={location.pathname}
-            className={cn('page-frame mx-auto flex min-h-full w-full max-w-6xl animate-page-in flex-col px-4 pt-3 sm:px-6 lg:px-10 lg:pb-10 lg:pt-6', task ? 'pb-0' : 'pb-28')}
+            className={cn('page-frame mx-auto flex min-h-full w-full max-w-6xl animate-page-in flex-col px-4 pt-3 sm:px-6 lg:px-10 lg:pb-10 lg:pt-6', task ? 'pb-0' : 'pb-[calc(7rem_+_env(safe-area-inset-bottom))]')}
           >
             <RouteErrorBoundary>
               <React.Suspense fallback={<PageSkeleton />}>
@@ -240,7 +240,7 @@ function Dock({ onLauncher, launcherOpen }: { onLauncher: () => void; launcherOp
   return (
     <nav
       aria-label="Primary"
-      className="safe-bottom fixed bottom-3 left-3 z-30 flex items-center gap-1 rounded-full bg-ink p-1.5 text-ink-muted shadow-dock lg:hidden"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] left-3 z-30 flex items-center gap-1 rounded-full bg-ink p-1.5 text-ink-muted shadow-dock lg:hidden"
     >
       {DOCK.map(({ to, label, icon: Icon }) => (
         <NavLink
@@ -286,7 +286,7 @@ function ActionOrb({ open, onOpenChange, onPick, hideTrigger }: { open: boolean;
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Trigger
         aria-label="Quick actions"
-        className={cn('safe-bottom fixed bottom-3 right-3 z-30 flex size-[60px] items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-transform active:scale-95 lg:hidden', hideTrigger && 'hidden')}
+        className={cn('fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-30 flex size-[60px] items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-transform active:scale-95 lg:hidden', hideTrigger && 'hidden')}
       >
         <Plus className="size-7" strokeWidth={2.5} />
       </DialogPrimitive.Trigger>
@@ -294,7 +294,7 @@ function ActionOrb({ open, onOpenChange, onPick, hideTrigger }: { open: boolean;
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(226_45%_4%/0.5)] backdrop-blur-sm" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="safe-bottom fixed bottom-3 right-3 z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-end gap-2 focus:outline-none lg:bottom-auto lg:left-[104px] lg:right-auto lg:top-20 lg:items-start"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)_+_0.75rem)] right-3 z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-end gap-2 focus:outline-none lg:bottom-auto lg:left-[104px] lg:right-auto lg:top-20 lg:items-start"
         >
           <DialogPrimitive.Title className="sr-only">Quick actions</DialogPrimitive.Title>
           <nav aria-label="Quick actions" className="flex w-full flex-col gap-2">
@@ -341,7 +341,7 @@ function Launcher({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boo
   const me = useMe();
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const sections = isAndroidApp()
+  const sections = isNativeApp()
     ? LAUNCHER.map((s) => (s.title === 'People' ? { ...s, items: [...s.items, { to: '/friends/contacts', label: 'From contacts', icon: BookUser }] } : s))
     : LAUNCHER;
   return (
@@ -350,7 +350,7 @@ function Launcher({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boo
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-[hsl(226_45%_4%/0.55)] backdrop-blur-sm" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="scrollbar-thin fixed inset-x-2 bottom-2 top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex animate-pop-in flex-col overflow-y-auto rounded-[28px] bg-canvas p-4 shadow-lift focus:outline-none sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[86dvh] sm:w-[34rem] sm:-translate-x-1/2 sm:-translate-y-1/2"
+          className="scrollbar-thin fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)_+_0.5rem)] top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex animate-pop-in flex-col overflow-y-auto rounded-[28px] bg-canvas p-4 shadow-lift focus:outline-none sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[86dvh] sm:w-[34rem] sm:-translate-x-1/2 sm:-translate-y-1/2"
         >
           <div className="mb-3 flex items-center gap-3">
             {me.data && <Avatar name={me.data.profile.display_name} color={me.data.profile.avatar_color} url={me.data.profile.avatar_url} />}

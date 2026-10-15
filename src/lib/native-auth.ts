@@ -1,14 +1,14 @@
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { appUrl } from './env';
-import { isAndroidApp } from './native-upi';
+import { isNativeApp } from './native-upi';
 import { supabase } from './supabase';
 
 /**
- * The Android app's private link scheme (reverse domain name, as RFC 8252
+ * The phone apps' private link scheme (reverse domain name, as RFC 8252
  * recommends for native apps). Google sign-in and auth emails that start in
- * the app come back to io.github.vishnumurali.owenil://…, and Android opens
- * the app. The Supabase redirect allow-list includes it.
+ * an app come back to io.github.vishnumurali.owenil://…, and Android or iOS
+ * opens the app. The Supabase redirect allow-list includes it.
  */
 export const APP_LINK_SCHEME = 'io.github.vishnumurali.owenil';
 
@@ -16,13 +16,13 @@ export const APP_LINK_SCHEME = 'io.github.vishnumurali.owenil';
 const APP_LINK_ROUTES = new Set(['/auth/callback', '/reset-password']);
 
 /**
- * Where Google sign-in and auth emails return to. In the Android app that is
+ * Where Google sign-in and auth emails return to. In the phone apps that is
  * the app itself, because the PKCE code verifier is stored there; on the
  * website it is the website.
  */
 export function authRedirectUrl(path: string): string {
   const clean = path.replace(/^\//, '');
-  return isAndroidApp() ? `${APP_LINK_SCHEME}://${clean}` : appUrl(clean);
+  return isNativeApp() ? `${APP_LINK_SCHEME}://${clean}` : appUrl(clean);
 }
 
 export interface AppLink {
@@ -94,12 +94,12 @@ function firstTime(url: string): boolean {
 }
 
 /**
- * Listens for app links in the Android app: both a link that started the app
+ * Listens for app links in the phone apps: both a link that started the app
  * and one that arrives while it runs. Calls navigate with the route to show.
  * Returns a function that stops listening.
  */
 export function listenForAppLinks(navigate: (route: string) => void): () => void {
-  if (!isAndroidApp()) return () => {};
+  if (!isNativeApp()) return () => {};
   let active = true;
   const handle = async (url: string | undefined) => {
     if (!url) return;
@@ -119,7 +119,7 @@ export function listenForAppLinks(navigate: (route: string) => void): () => void
   };
 }
 
-/** Opens Google's sign-in page in a Chrome tab (Google blocks sign-in inside app web views). */
+/** Opens Google's sign-in page in the system browser tab (Chrome on Android, Safari on iPhone); Google blocks sign-in inside app web views. */
 export async function openSignInPage(url: string): Promise<void> {
   await Browser.open({ url });
 }
