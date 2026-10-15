@@ -63,11 +63,12 @@ jobs:
           running || { echo "::error::The app is not running 25 s after launch (crashed?)"; exit 1; }
           echo "✓ The app starts and keeps running"
           # App links: what Google sign-in and auth emails use to come back to the app.
+          # iOS asks "Open in Owenil?" before handing a link from outside to an app.
           xcrun simctl openurl "$UDID" "io.github.vishnumurali.owenil://auth/callback?error_description=App%20link%20test"
           sleep 10
           xcrun simctl io "$UDID" screenshot ios-smoke/2-app-link.png
           running || { echo "::error::The app stopped after opening an app link"; exit 1; }
-          echo "✓ An app link opens the app"
+          echo "✓ iOS hands app links to Owenil (it asks “Open in Owenil?” first; screenshot 2)"
           xcrun simctl spawn "$UDID" log show --last 3m --style compact --predicate 'process == "App"' 2>/dev/null | grep -iE "error|exception|⚡️" | tail -n 40 || true
       - uses: actions/upload-artifact@v7
         if: always()

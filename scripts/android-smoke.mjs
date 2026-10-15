@@ -257,13 +257,20 @@ async function main() {
     await addData('vnd.android.cursor.item/phone_v2', '+91 98765 43210');
     await addData('vnd.android.cursor.item/email_v2', 'test.friend@example.com');
     await adb(['shell', 'pm', 'grant', PKG, 'android.permission.READ_CONTACTS']);
-    const contacts = await page.evaluate(async () => {
-      try {
-        return { ok: true, value: (await window.Capacitor.nativePromise('Contacts', 'getContacts', {})).contacts };
-      } catch (e) {
-        return { ok: false, code: e?.code ?? null, message: String(e?.message ?? e) };
-      }
-    }, null, 30_000);
+    const readContacts = () =>
+      page.evaluate(async () => {
+        try {
+          return { ok: true, value: (await window.Capacitor.nativePromise('Contacts', 'getContacts', {})).contacts };
+        } catch (e) {
+          return { ok: false, code: e?.code ?? null, message: String(e?.message ?? e) };
+        }
+      }, null, 30_000);
+    // Android links a new contact's details in the background, so it can take a moment to show up.
+    let contacts = await readContacts();
+    await waitFor('the new contact to be listed', async () => {
+      contacts = await readContacts();
+      return contacts.ok && contacts.value.some((c) => c.name === 'Test Friend');
+    }, 20_000).catch(() => {});
     const friend = contacts.ok ? contacts.value.find((c) => c.name === 'Test Friend') : null;
     check(
       !!friend && friend.phones.includes('+91 98765 43210') && friend.emails.includes('test.friend@example.com'),
